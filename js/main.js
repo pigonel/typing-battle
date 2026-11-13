@@ -1,0 +1,23 @@
+import { store, applySettings, applyUser } from './core/state.js';
+import { restoreSession } from './core/auth.js';
+import { mountAccountBar } from './core/account_ui.js';
+import { conn } from './net/conn.js';
+import { initAudio } from './core/audio.js';
+import { registerScreens, startRouter } from './core/router.js';
+import menu from './screens/menu.js';
+import settings from './screens/settings.js';
+import training from './screens/training.js';
+import battle from './screens/battle.js';
+import matching from './screens/matching.js';
+import draft from './screens/draft.js';
+import vs from './screens/vs.js';
+import result from './screens/result.js';
+import codex from './screens/codex.js';
+import titles from './screens/titles.js';
+
+registerScreens({ menu, settings, training, battle, matching, draft, vs, result, codex, titles });
+applySettings(store.get().settings);
+mountAccountBar(document.getElementById('acct'));
+startRouter(document.getElementById('app'), 'menu');
+initAudio();
+restoreSession().then(u => { if (u) applyUser(u); }).finally(() => conn.connect());
