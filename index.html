@@ -287,6 +287,38 @@ input[type=checkbox]{margin-right:8px}
 .cutin.r{flex-direction:row-reverse;text-align:right}
 .ci-art{height:170px;margin-top:-30px}.ci-art svg{height:100%;width:auto}.cutin.r .ci-art svg{transform:scaleX(-1)}
 .ci-txt{display:grid}.ci-txt small{color:#fff;opacity:.85;font-size:14px}.ci-txt b{font-size:54px;font-style:italic;font-weight:900;line-height:1.1;color:#fff;text-shadow:0 4px 0 #000a,0 0 20px #0008}
+
+/* ---- ランクのアイコン・ランクカード ---- */
+.ri{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 3px 0 rgba(0,0,0,.25))}
+.ri-sp{animation:spark 1.8s ease-in-out infinite}
+@keyframes spark{50%{opacity:.15;transform:scale(.6)}}
+.ri.hot .ri-glow{animation:glow 1.6s ease-in-out infinite alternate}
+@keyframes glow{to{opacity:.9}}
+.ri.hot .ri-wing{animation:wing 2.4s ease-in-out infinite;transform-origin:50px 50px}
+@keyframes wing{50%{transform:translateY(-2px) scaleY(1.03)}}
+.hud{align-items:stretch}
+.chips{display:flex;flex-wrap:wrap;gap:10px;align-content:center}
+.rk{--rc:#8d95b4;display:flex;gap:18px;align-items:center;flex:1 1 560px;min-width:440px;max-width:760px;padding:10px 24px 10px 14px;background:linear-gradient(100deg,color-mix(in srgb,var(--rc) 26%,var(--panel)),var(--panel) 72%);border:1px solid var(--line);border-left:6px solid var(--rc)}
+.rk-icon{flex:none;width:128px;height:120px;margin:-10px -14px -10px -8px}
+.rk-body{flex:1;display:grid;gap:4px;min-width:0}
+.rk-top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.rk-name{font-size:28px;font-weight:900;line-height:1.1}
+.rk-tag{font-size:12px;font-weight:800;padding:1px 10px;background:#ff5a4d;color:#fff;transform:skewX(-10deg)}
+.rk-total{font-size:13px;color:var(--sub)}.rk-total b{font-size:18px;color:var(--text);font-variant-numeric:tabular-nums}
+.rk-gauge{position:relative;height:26px;background:var(--bg);border:1px solid var(--line);overflow:hidden;transform:skewX(-10deg)}
+.rk-gauge i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--rc),color-mix(in srgb,var(--rc) 55%,#fff));box-shadow:0 0 16px var(--rc);transition:width .6s ease-out}
+.rk-gauge::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(25% - 1px),#0006 calc(25% - 1px) 25%)}
+.rk-gauge.seg::after{background:repeating-linear-gradient(90deg,transparent 0 calc(20% - 2px),#000a calc(20% - 2px) 20%)}
+.rk-gauge span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000c;transform:skewX(10deg);white-space:nowrap}
+.mt-card{align-items:center;display:flex;gap:12px}.mt-card.r{flex-direction:row-reverse}.mt-ico{width:54px;height:56px;flex:none}
+.vs-nm{display:flex;align-items:center;gap:14px}.vs-nm.r{flex-direction:row-reverse}.vs-nm>div{display:grid}.vs-ico{width:70px;height:72px;flex:none}
+.rs-rank{display:flex;align-items:center;justify-content:center;gap:26px;margin:8px 0 0}
+.rs-ico{width:120px;height:124px}.rs-arrow{font-size:40px;font-weight:900;color:var(--hit)}
+.rs-ico.new.ev{animation:promo 1s ease-out}.rs-ico.new.ev .ri{filter:drop-shadow(0 0 22px var(--hit))}
+@keyframes promo{from{transform:scale(.3) rotate(-12deg);opacity:0}60%{transform:scale(1.25)}}
+.rs-ev{margin:0;font-size:22px;font-weight:900;color:var(--hit)}
+.cx-st{margin-top:12px;padding:8px 14px;background:var(--bg);border-left:5px solid #6be6ff;display:grid;gap:2px}.cx-st small{color:var(--sub);font-size:12px}.cx-st .note{margin:0;font-size:13px}
+.cx-bar i.wr u{background:linear-gradient(90deg,#59e08a,#d6ff7a)}
 </style>
 </head>
 <body>
@@ -353,7 +385,7 @@ const titleName = id => TITLES.find(t => t.id === id)?.name ?? null;
 
 const SKEY = 'tb.settings.v1', GKEY = 'tb.guest.v1';
 const DEFAULTS = {
-  ign: '', title: null, fx: true, bgm: 70, se: 70, theme: 'dark',
+  title: null, fx: true, bgm: 70, se: 70, theme: 'dark',
   hud: { ign: true, rank: true, title: true, streak: true },
   skillKeys: ['Shift+KeyD', 'Shift+KeyF'],
 };
@@ -362,6 +394,7 @@ const read = (k, fallback) => { try { return JSON.parse(localStorage.getItem(k))
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* 保存不可でも続行 */ } };
 
 const saved = read(SKEY, {});
+const mergeSettings = x => ({ ...DEFAULTS, ...x, hud: { ...DEFAULTS.hud, ...(x?.hud ?? {}) } });
 const guestIgn = () => {
   let g = read(GKEY, null);
   if (!g) { g = 'Guest_' + (1000 + Math.floor(Math.random() * 9000)); write(GKEY, g); }
@@ -370,33 +403,56 @@ const guestIgn = () => {
 // 開発用: URLに ?account=1 を付けると「登録済みアカウント」として動く(ランクマッチの確認用)
 const registered = false;
 
+const BLANK_PROFILE = { rank: '未配置', name: '未配置', lp: 0, tier: 0, div: 1, total: 0, placed: false, demo: null, pg: 0, gm: false, streak: 0, titles: [] };
 const store = createStore({
   screen: 'menu', params: {}, mode: null, match: null, // mode: 'ranked' | 'normal'
-  settings: { ...DEFAULTS, ...saved, hud: { ...DEFAULTS.hud, ...saved.hud } },
+  // ゲストの設定はこのブラウザに保存。ログイン中はアカウントごとにサーバーへ保存(称号はゲストでは装備なし)
+  settings: { ...mergeSettings(saved), title: new URLSearchParams(location.search).has('unlock') ? saved.title ?? null : null },
   session: { guest: !registered, ign: registered ? (saved.ign || 'Player') : guestIgn(), online: navigator.onLine, server: false },
   // 開発用: ?unlock=1 で全称号を獲得済みとして表示(本来はサーバーが判定)
-  profile: { rank: '未配置', lp: 0, streak: 0, titles: new URLSearchParams(location.search).has('unlock') ? TITLES.map(t => t.id) : [] },
+  profile: { ...BLANK_PROFILE, titles: new URLSearchParams(location.search).has('unlock') ? TITLES.map(t => t.id) : [] },
 });
 
 // サーバーから受け取った自分のプロフィール(ランク・称号など)を反映
-const applyProfile = p => store.set(s => ({ profile: { ...s.profile, rank: p.rank, lp: 0, streak: p.streak, titles: p.titles } }));
+const applyProfile = p => store.set(s => ({ profile: { ...s.profile, rank: p.rank, name: p.rankName, lp: p.lp, tier: p.tier, div: p.div, total: p.totalLp, placed: p.placed, demo: p.demo, pg: p.pg, gm: p.gm, streak: p.streak, titles: p.titles } }));
 const applyUser = u => {
   store.set(s => ({ session: { ...s.session, guest: false, ign: u.ign, email: u.email } }));
   applyProfile(u);
-  if (u.equipped !== undefined && u.equipped !== store.get().settings.title) saveSettings({ title: u.equipped });
+  if (u.settings && Object.keys(u.settings).length) { // アカウントに保存されている設定に切り替える
+    const settings = mergeSettings(u.settings);
+    settings.title = u.titles.includes(settings.title) ? settings.title : null;
+    store.set({ settings }); applySettings(settings);
+  } else { store.set(s => ({ settings: { ...s.settings, title: null } })); syncNow(); } // 初めてのログイン: いまの設定をアカウントに保存
 };
-const clearUser = () => store.set(s => ({ session: { ...s.session, guest: true, ign: guestIgn(), email: null }, profile: { rank: '未配置', lp: 0, streak: 0, titles: [] } }));
+const clearUser = () => { // ログアウト: ゲストの設定に戻す(称号は装備なし)
+  const g = { ...mergeSettings(read(SKEY, {})), title: null };
+  store.set(s => ({ session: { ...s.session, guest: true, ign: guestIgn(), email: null }, profile: { ...BLANK_PROFILE }, settings: g }));
+  applySettings(g);
+};
 
 function applySettings(s = store.get().settings) {
   const d = document.documentElement;
   d.dataset.theme = s.theme;
   d.dataset.fx = s.fx ? 'on' : 'off';
 }
+const equippedTitle = st => (st.profile.titles.includes(st.settings.title) ? st.settings.title : null); // 持っている称号だけを装備として扱う
+const tokenOf = () => { try { return localStorage.getItem('tb.token'); } catch { return null; } };
+let syncTimer = 0;
+async function syncNow() { // ログイン中の設定をサーバー(アカウント)に保存
+  clearTimeout(syncTimer);
+  const { session, settings: x } = store.get();
+  if (session.guest || location.protocol === 'file:') return;
+  try {
+    await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenOf()}` },
+      body: JSON.stringify({ fx: x.fx, bgm: x.bgm, se: x.se, theme: x.theme, hud: x.hud, skillKeys: x.skillKeys, title: x.title }) });
+  } catch { /* 通信できないときは、次の変更でもう一度送る */ }
+}
 function saveSettings(patch) {
   const settings = { ...store.get().settings, ...patch };
-  write(SKEY, settings);
   store.set({ settings });
   applySettings(settings);
+  if (store.get().session.guest) write(SKEY, settings);
+  else { clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 500); }
 }
 
 const setOnline = online => store.set(s => ({ session: { ...s.session, online } }));
@@ -455,6 +511,7 @@ async function api(path, method, body) {
 const Auth = {
   async register({ email, password, ign }) { const r = await api('/api/register', 'POST', { email: email.trim(), password, ign }); if (r.token) setToken(r.token); return r.error ? { error: r.error } : { user: r.user }; },
   async login({ email, password }) { const r = await api('/api/login', 'POST', { email: email.trim(), password }); if (r.token) setToken(r.token); return r.error ? { error: r.error } : { user: r.user }; },
+  async changeIgn(ign) { const r = await api('/api/ign', 'POST', { ign }); return r.error ? { error: r.error } : { user: r.user }; },
   async logout() { await api('/api/logout', 'POST', {}); setToken(null); },
   async restore() {
     if (!getToken()) return null;
@@ -662,7 +719,7 @@ function mountAccountBar(host) {
     const a = e.target.closest('[data-a]')?.dataset.a, t = e.target.closest('[data-tab]')?.dataset.tab;
     if (a === 'open') open();
     else if (a === 'close' || e.target === modal) close();
-    else if (a === 'out') { await Auth.logout(); clearUser(); conn.reconnect(); }
+    else if (a === 'out') { await syncNow(); await Auth.logout(); clearUser(); conn.reconnect(); }
     else if (t) { tab = t; err = ''; paintModal(); }
   });
   host.addEventListener('submit', async e => {
@@ -879,7 +936,7 @@ function createBattle({ chars, rng, duration = R.DURATION }) {
       if (over) return;
       const p = P[s], f = P[otherSide(s)];
       p.hits++; p.combo++;
-      const bonus = Math.min(Math.floor(p.combo / (p.c.comboStep ?? R.COMBO_STEP)) * R.COMBO_STEP_BONUS, p.c.comboCap ?? R.COMBO_CAP);
+      const bonus = Math.min(Math.floor(p.combo / (p.c.comboStep ?? R.COMBO_STEP)) * (p.c.comboBonus ?? R.COMBO_STEP_BONUS), p.c.comboCap ?? R.COMBO_CAP);
       const op = pas(p, 'opening'), rg = pas(p, 'rage'), cc = pas(p, 'critCombo'), ls = pas(p, 'lifesteal'), fg = pas(f, 'foeGauge');
       const passiveMul = (op && t < op.sec ? op.v : 1) * (rg && p.hp / p.max <= rg.hp ? rg.v : 1);
       const critRate = clampN(p.c.crit + sum(p, 'critUp') + (cc ? Math.min(Math.floor(p.combo / cc.per) * cc.v, cc.cap) : 0), 0, 1);
@@ -895,8 +952,8 @@ function createBattle({ chars, rng, duration = R.DURATION }) {
     },
     miss(s) { // ミスタイプ: コンボ切れ+自傷
       if (over) return;
-      const p = P[s], mc = pas(p, 'missCut'), ck = pas(p, 'comboKeep');
-      p.miss++; p.combo = ck ? Math.floor(p.combo * ck.v) : 0;
+      const p = P[s], mc = pas(p, 'missCut'), cl = pas(p, 'comboLoss');
+      p.miss++; p.combo = cl ? Math.max(0, p.combo - cl.n) : 0; // 武闘家はコンボが0に戻らず、決まった数だけ減る
       const self = active(p, 'guard') ? 0 : p.max * R.MISS_SELF_PCT * (mc ? mc.v : 1);
       if (self) hurt(s, self);
       push({ type: 'miss', side: s, self });
@@ -987,63 +1044,63 @@ const MENU_ITEMS = [
 // def=防御カット率, crit=会心率, critMul=会心倍率。passive=常時効果(engine/battle.js が解釈)。スキル効果(fx):
 //  burst:相手の最大HPに対する割合ダメージ / heal:HP回復 / buff:効果付与(to:'foe'で相手に) / dot:継続ダメージ
 //  gaugeCut:相手のゲージに倍率 / combo:コンボを加算(add)・設定(set)
-//  comboStep/comboCap: コンボ何回ごとにダメージが上がるか / 上限(キャラ固有。省略時は rules.js)
+//  comboStep/comboBonus/comboCap: コンボ何回ごとに、何%ダメージが上がるか / 上限(キャラ固有。省略時は rules.js)
 const CHARACTERS = [
-  { id: 'thief', name: 'シーフ', role: '速攻', hp: 1260, atk: 3.63, def: 0.05, crit: 0.15, critMul: 1.6,
+  { id: 'thief', name: 'シーフ', role: '速攻', hp: 1260, atk: 4.00, def: 0.05, crit: 0.15, critMul: 1.6,
     passive: { k: 'opening', sec: 12, v: 1.15, name: '先手必勝', desc: '開始から12秒間、与ダメージ1.15倍' },
     lore: '影から影へ渡り歩く、元・盗賊ギルドの斥候。先手を取れば、誰にも負けない。',
     skills: [
       { name: '連撃', cost: 100, desc: '5秒間、与ダメージ1.75倍', fx: [{ t: 'buff', k: 'dmg', v: 1.75, dur: 5 }] },
       { name: '疾風迅雷', cost: 250, desc: '最大HP8%のダメージ+6秒間、与ダメージ1.45倍', fx: [{ t: 'burst', pct: 0.08 }, { t: 'buff', k: 'dmg', v: 1.45, dur: 6 }] },
     ] },
-  { id: 'golem', name: 'ゴーレム', role: '防御', hp: 1700, atk: 2.42, def: 0.15, crit: 0.05, critMul: 1.5,
+  { id: 'golem', name: 'ゴーレム', role: '防御', hp: 1700, atk: 2.73, def: 0.15, crit: 0.05, critMul: 1.5,
     passive: { k: 'regen', pct: 0.0010, name: '岩肌の再生', desc: '毎秒、最大HPの0.10%を回復' },
     lore: '古代遺跡を守り続ける岩の巨兵。打たれ強く、傷ついた体も少しずつ再生する。',
     skills: [
       { name: '鉄壁', cost: 100, desc: '5秒間、被ダメージ33%カット', fx: [{ t: 'buff', k: 'shield', v: 0.33, dur: 5 }] },
       { name: '不動', cost: 250, desc: 'HP10%回復+6秒間、被ダメージ28%カット', fx: [{ t: 'heal', pct: 0.10 }, { t: 'buff', k: 'shield', v: 0.28, dur: 6 }] },
     ] },
-  { id: 'saint', name: '聖女', role: '回復', hp: 1380, atk: 3.19, def: 0.10, crit: 0.08, critMul: 1.5,
+  { id: 'saint', name: '聖女', role: '回復', hp: 1380, atk: 3.42, def: 0.10, crit: 0.08, critMul: 1.5,
     passive: { k: 'ward', v: 0.05, name: '聖なる加護', desc: '受けるダメージを常に5%カット' },
     lore: '小さな村を救った祈りの乙女。祝福の力で、失敗の痛みもやわらげる。',
     skills: [
-      { name: '癒しの舞', cost: 100, desc: 'HPを8%回復', fx: [{ t: 'heal', pct: 0.08 }] },
-      { name: '浄化の祈り', cost: 250, desc: 'HP6%回復+8秒間、ミスの自傷を無効', fx: [{ t: 'heal', pct: 0.06 }, { t: 'buff', k: 'guard', v: 1, dur: 8 }] },
+      { name: '癒しの舞', cost: 75, desc: 'HPを8%回復', fx: [{ t: 'heal', pct: 0.03 }] },
+      { name: '浄化の祈り', cost: 175, desc: 'HP10%回復+8秒間、ミスの自傷を無効', fx: [{ t: 'heal', pct: 0.10 }, { t: 'buff', k: 'guard', v: 1, dur: 8 }] },
     ] },
-  { id: 'wolf', name: '雷狼', role: 'クリティカル', hp: 1330, atk: 3.14, def: 0.05, crit: 0.25, critMul: 2.0,
+  { id: 'wolf', name: '雷狼', role: 'クリティカル', hp: 1330, atk: 3.40, def: 0.05, crit: 0.25, critMul: 2.0,
     passive: { k: 'critCombo', per: 10, v: 0.03, cap: 0.15, name: '疾雷', desc: 'コンボ10ごとに会心率+3%(最大+15%)' },
     lore: '嵐の夜に生まれた雷の獣。走るほどに、稲妻が研ぎ澄まされていく。',
     skills: [
       { name: '雷鳴', cost: 100, desc: '6秒間、会心率+40%', fx: [{ t: 'buff', k: 'critUp', v: 0.40, dur: 6 }] },
       { name: '落雷', cost: 250, desc: '相手の最大HP11%のダメージ', fx: [{ t: 'burst', pct: 0.11 }] },
     ] },
-  { id: 'witch', name: '魔女', role: '持続妨害', hp: 1470, atk: 3.03, def: 0.10, crit: 0.10, critMul: 1.5,
+  { id: 'witch', name: '魔女', role: '持続妨害', hp: 1470, atk: 3.36, def: 0.10, crit: 0.10, critMul: 1.5,
     passive: { k: 'lifesteal', v: 0.06, name: '吸命', desc: '与えたダメージの6%をHPとして吸収' },
     lore: '毒と呪いを操る森の魔女。傷つけた分だけ、その命を吸い取っていく。',
     skills: [
-      { name: '毒針', cost: 100, desc: '8秒間、相手に毎秒最大HP1.0%の継続ダメージ', fx: [{ t: 'dot', pct: 0.010, dur: 8 }] },
-      { name: '霧隠れ', cost: 250, desc: '8秒間、相手の与ダメージ0.62倍', fx: [{ t: 'buff', k: 'atkDown', v: 0.62, dur: 8, to: 'foe' }] },
+      { name: '毒針', cost: 125, desc: '8秒間、相手に毎秒最大HP1.0%の継続ダメージ', fx: [{ t: 'dot', pct: 0.010, dur: 8 }] },
+      { name: '霧隠れ', cost: 200, desc: '8秒間、相手の与ダメージ0.62倍', fx: [{ t: 'buff', k: 'atkDown', v: 0.62, dur: 8, to: 'foe' }] },
     ] },
-  { id: 'ogre', name: 'オーガ', role: '一撃', hp: 1120, atk: 4.12, def: 0.0, crit: 0.10, critMul: 1.5,
+  { id: 'ogre', name: 'オーガ', role: '一撃', hp: 1120, atk: 4.61, def: 0.0, crit: 0.10, critMul: 1.5,
     passive: { k: 'rage', hp: 0.3, v: 1.3, name: '窮鼠の怒り', desc: 'HPが30%以下のとき、与ダメージ1.3倍' },
     lore: '怪力自慢の鬼族の戦士。追い詰められるほど、怒りが力に変わる。',
     skills: [
       { name: '剛断', cost: 100, desc: '相手の最大HP10%のダメージ', fx: [{ t: 'burst', pct: 0.10 }] },
       { name: '鬼気', cost: 250, desc: '8秒間、与ダメージ1.55倍', fx: [{ t: 'buff', k: 'dmg', v: 1.55, dur: 8 }] },
     ] },
-  { id: 'monk', name: '武闘家', role: 'コンボ', hp: 1400, atk: 3.58, def: 0.08, crit: 0.10, critMul: 1.5, comboCap: 0.60, comboStep: 5,
-    passive: { k: 'comboKeep', v: 0.5, name: '不屈の連打', desc: 'ミスしてもコンボが半分残る' },
+  { id: 'monk', name: '武闘家', role: 'コンボ', hp: 1400, atk: 3.60, def: 0.08, crit: 0.10, critMul: 1.5, comboCap: 0.45, comboStep: 5, comboBonus: 0.02,
+    passive: { k: 'comboLoss', n: 10, name: '不屈の連打', desc: 'ミスしてもコンボは0に戻らず、10減るだけ。さらにコンボが続くほど、ダメージが大きく伸びる(5コンボごとに+3%、最大+75%)' },
     lore: '拳ひとつで旅をする修行僧。倒れても、積み上げた連打の流れは途切れない。',
     skills: [
       { name: '加速', cost: 100, desc: '7秒間、ゲージ獲得2.8倍', fx: [{ t: 'buff', k: 'gaugeMul', v: 2.8, dur: 7 }] },
       { name: '連鎖', cost: 250, desc: 'コンボを+30する', fx: [{ t: 'combo', add: 30 }] },
     ] },
-  { id: 'phantom', name: 'ファントム', role: '妨害', hp: 1540, atk: 3.19, def: 0.12, crit: 0.12, critMul: 1.6,
+  { id: 'phantom', name: 'ファントム', role: '妨害', hp: 1540, atk: 3.24, def: 0.12, crit: 0.12, critMul: 1.6,
     passive: { k: 'foeGauge', v: 0.85, name: '亡霊の囁き', desc: '相手のスキルゲージ獲得が0.85倍' },
     lore: '古城をさまよう亡霊。囁きひとつで、相手の力の流れを乱してしまう。',
     skills: [
-      { name: '封鎖', cost: 100, desc: '相手のスキルゲージを25%まで減らす', fx: [{ t: 'gaugeCut', v: 0.25 }] },
-      { name: '寸断', cost: 250, desc: '相手のコンボを0にし、6秒間与ダメージ0.72倍', fx: [{ t: 'combo', set: 0, to: 'foe' }, { t: 'buff', k: 'atkDown', v: 0.72, dur: 6, to: 'foe' }] },
+      { name: '封鎖', cost: 125, desc: '相手のスキルゲージを25%まで減らす', fx: [{ t: 'gaugeCut', v: 0.25 }] },
+      { name: '寸断', cost: 250, desc: '相手の最大HPの6%のダメージを与え、相手のコンボを0にして、スキルゲージを25%まで減らす。さらに5秒間、相手の与ダメージを0.6倍にする', fx: [{ t: 'burst', pct: 0.06 }, { t: 'gaugeCut', v: 0.25 }, { t: 'combo', set: 0, to: 'foe' }, { t: 'buff', k: 'atkDown', v: 0.6, dur: 5, to: 'foe' }] },
     ] },
 ];
 const charById = id => CHARACTERS.find(c => c.id === id) ?? CHARACTERS[0];
@@ -1507,6 +1564,73 @@ const ART = {
 
 const charArt = c => wrap(c.name, ART[c.id]);
 
+// ---- js/data/rank_icons.js
+// ランクのアイコン(SVG)。ティアごとに形・色・飾りが変わる。区分(1〜3)は下の菱形で表す
+const TIER_NAMES = ['ブロンズ', 'シルバー', 'ゴールド', 'プラチナ', 'ダイヤ', 'マスター'];
+const PAL = [
+  { hi: '#ffd7ae', mid: '#cc7a3e', lo: '#6b3414', glow: '#ff9a55' },
+  { hi: '#ffffff', mid: '#b9c3d8', lo: '#586480', glow: '#cfe0ff' },
+  { hi: '#fff6b8', mid: '#f4b92f', lo: '#8c5806', glow: '#ffd24a' },
+  { hi: '#f2fffc', mid: '#74d9d2', lo: '#27727c', glow: '#8ff6ee' },
+  { hi: '#f4fcff', mid: '#6cc4ff', lo: '#2459c9', glow: '#8fd3ff' },
+  { hi: '#ffe3ff', mid: '#c25cff', lo: '#58209a', glow: '#e07dff' },
+  { hi: '#fff1c2', mid: '#ff5b4a', lo: '#7d0f20', glow: '#ff8a5a' },
+];
+const UNR = { hi: '#e3e7f5', mid: '#8d95b4', lo: '#3f4766', glow: '#aab2d4' };
+const rankColor = ({ placed, tier, gm }) => (!placed ? UNR : PAL[gm ? 6 : Math.min(tier, 5)]).mid;
+
+const O = 'stroke="#10122e" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"';
+const SHIELD = 'M50 4 L88 17 L86 60 Q84 87 50 104 Q16 87 14 60 L12 17 Z';
+const PLATE = 'M50 14 L78 24 L76.5 59 Q75 80 50 93 Q25 80 23.5 59 L22 24 Z';
+const WING = 'M14 28 C-6 20 -18 34 -15 56 L-4 48 L-7 64 L7 55 L6 71 L16 57 Z';
+const star = (cx, cy, R, r) => Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + (i * Math.PI) / 5, k = i % 2 ? r : R; return `${(cx + k * Math.cos(a)).toFixed(1)},${(cy + k * Math.sin(a)).toFixed(1)}`; }).join(' ');
+const grad = (u, n, a, b, c) => `<linearGradient id="${u}${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset=".5" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></linearGradient>`;
+const sparkle = (x, y, s, d) => `<path class="ri-sp" style="animation-delay:${d}s" d="M${x} ${y - s} L${x + s * 0.28} ${y - s * 0.28} L${x + s} ${y} L${x + s * 0.28} ${y + s * 0.28} L${x} ${y + s} L${x - s * 0.28} ${y + s * 0.28} L${x - s} ${y} L${x - s * 0.28} ${y - s * 0.28} Z" fill="#fff"/>`;
+
+// 中央の紋章(ティアごと)
+function emblem(t, u, P) {
+  const m = `url(#${u}m)`, f = `fill="${m}" ${O}`;
+  if (t === 0) return `<path d="M50 34 L69 58 L60 58 L50 46 L40 58 L31 58 Z" ${f}/><path d="M50 52 L69 76 L60 76 L50 64 L40 76 L31 76 Z" ${f} opacity=".55"/>`;
+  if (t === 1) return `<path d="M50 30 L70 52 L61 52 L50 41 L39 52 L30 52 Z" ${f}/><path d="M50 46 L70 68 L61 68 L50 57 L39 68 L30 68 Z" ${f}/><path d="M50 62 L70 84 L61 84 L50 73 L39 84 L30 84 Z" ${f} opacity=".6"/>`;
+  if (t === 2) return `<polygon points="${star(50, 56, 25, 11)}" ${f}/><polygon points="${star(50, 56, 13, 5.5)}" fill="${P.hi}" opacity=".85"/><path d="M26 74 Q24 58 32 46 M74 74 Q76 58 68 46" fill="none" stroke="${P.lo}" stroke-width="4" stroke-linecap="round"/>`;
+  if (t === 3) return `<circle cx="50" cy="56" r="25" fill="none" stroke="${P.lo}" stroke-width="3"/><circle cx="50" cy="56" r="25" fill="none" stroke="${P.hi}" stroke-width="1.5" stroke-dasharray="4 5"/><polygon points="${star(50, 56, 18, 8)}" ${f}/><circle cx="26" cy="56" r="3.5" fill="${P.hi}" ${O}/><circle cx="74" cy="56" r="3.5" fill="${P.hi}" ${O}/>`;
+  if (t === 4) return `<polygon points="50,32 70,46 70,66 50,84 30,66 30,46" ${f}/><polygon points="38,46 62,46 70,56 30,56" fill="${P.hi}" opacity=".9" ${O}/><path d="M30 56 L50 84 L70 56 M41 56 L50 84 L59 56 M50 32 L38 46 M50 32 L62 46" fill="none" stroke="${P.hi}" stroke-width="1.6" opacity=".9"/>`;
+  if (t === 5) return `<path d="M28 70 L28 42 L39 54 L50 34 L61 54 L72 42 L72 70 Z" ${f}/><circle cx="28" cy="40" r="4" fill="${P.hi}" ${O}/><circle cx="50" cy="31" r="4.5" fill="${P.hi}" ${O}/><circle cx="72" cy="40" r="4" fill="${P.hi}" ${O}/><polygon points="${star(50, 61, 7.5, 3.2)}" fill="${P.hi}"/>`;
+  return `<path d="M26 72 L24 38 L37 52 L43 28 L50 46 L57 28 L63 52 L76 38 L74 72 Z" ${f}/><circle cx="50" cy="60" r="8" fill="${P.hi}" ${O}/><circle cx="50" cy="60" r="3.6" fill="${P.mid}"/><path d="M43 28 L50 14 L57 28" fill="${P.hi}" ${O}/>`;
+}
+
+// info = { placed, tier(0..5), div(1..3), gm }
+function rankIcon(info = {}, uid = 'ri') {
+  const { placed = false, tier = 0, div = 1, gm = false } = info;
+  const t = !placed ? -1 : gm ? 6 : Math.min(tier, 5), P = t < 0 ? UNR : PAL[t], u = `${uid}${t}`;
+  const wings = t >= 3 ? `<g class="ri-wing"><path d="${WING}" fill="url(#${u}w)" ${O}/><path d="${WING}" transform="translate(100 0) scale(-1 1)" fill="url(#${u}w)" ${O}/></g>` : '';
+  const big = t >= 5 ? `<g transform="translate(50 56) scale(1.22) translate(-50 -56)" class="ri-wing"><path d="${WING}" fill="url(#${u}w)" ${O}/><path d="${WING}" transform="translate(100 0) scale(-1 1)" fill="url(#${u}w)" ${O}/></g>` : '';
+  const horns = t >= 5 ? `<path d="M26 12 L18 -3 L36 8 Z M74 12 L82 -3 L64 8 Z" fill="url(#${u}m)" ${O}/>` : '';
+  const halo = t === 6 ? `<ellipse cx="50" cy="-2" rx="22" ry="6" fill="none" stroke="#ffd14a" stroke-width="3.5"/>` : '';
+  const rivets = t === 0 ? '<circle cx="24" cy="27" r="2.4" fill="#ffe2c4"/><circle cx="76" cy="27" r="2.4" fill="#ffe2c4"/>' : '';
+  const gem = t >= 2 && t < 5 ? `<circle cx="50" cy="9" r="4.4" fill="${P.hi}" ${O}/>` : '';
+  const sp = t === 4 ? sparkle(8, 20, 6, 0) + sparkle(94, 40, 5, 0.9) + sparkle(78, 4, 4.5, 1.6) : t === 6 ? sparkle(10, 14, 5, 0) + sparkle(92, 30, 6, 0.8) : t === 5 ? sparkle(88, 12, 4.5, 0.5) : '';
+  const pips = t < 0 || t >= 5 ? '' : [38, 50, 62].map((x, i) => `<path d="M${x} 108 l5 5.5 l-5 5.5 l-5 -5.5 z" fill="${i < div ? P.hi : '#10122e66'}" stroke="#10122e" stroke-width="2" stroke-linejoin="round"/>`).join('');
+  const q = t < 0 ? '<text x="50" y="72" text-anchor="middle" font-size="46" font-weight="900" fill="#e3e7f5" stroke="#10122e" stroke-width="2.5" paint-order="stroke" font-family="sans-serif">?</text>' : '';
+  return `<svg class="ri ${t >= 5 ? 'hot' : ''}" viewBox="-30 -14 160 142" role="img" aria-label="${t < 0 ? '未配置' : t === 6 ? 'グランドマスター' : `${TIER_NAMES[t]}${t < 5 ? div : ''}`}">
+    <defs>${grad(u, 'm', P.hi, P.mid, P.lo)}${grad(u, 'p', P.lo, P.mid, P.hi)}${grad(u, 'w', P.hi, P.mid, P.lo)}<filter id="${u}b" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter></defs>
+    ${t >= 3 ? `<ellipse class="ri-glow" cx="50" cy="56" rx="46" ry="48" fill="${P.glow}" opacity=".5" filter="url(#${u}b)"/>` : ''}
+    ${big || wings}${halo}${horns}
+    <path d="${SHIELD}" fill="url(#${u}m)" ${O}/>
+    <path d="${PLATE}" fill="url(#${u}p)" ${O}/>
+    <path d="M50 14 L78 24 L76.5 40 Q50 34 23.5 40 L22 24 Z" fill="#fff" opacity=".18"/>
+    ${rivets}${gem}${t < 0 ? q : emblem(t, u, P)}${sp}${pips}
+  </svg>`;
+}
+
+// 「ゴールド2」「マスター」「グランドマスター」のような名前から、アイコン用の情報を作る
+function parseRank(name = '') {
+  if (name.startsWith('グランドマスター')) return { placed: true, tier: 5, div: 0, gm: true };
+  if (name.startsWith('マスター')) return { placed: true, tier: 5, div: 0, gm: false };
+  const i = TIER_NAMES.findIndex(n => n !== 'マスター' && name.startsWith(n));
+  return i < 0 ? { placed: false, tier: 0, div: 1, gm: false } : { placed: true, tier: i, div: Math.min(3, Math.max(1, +name.slice(TIER_NAMES[i].length, TIER_NAMES[i].length + 1) || 1)), gm: false };
+}
+
 // ---- js/screens/battle_fx.js
 // バトル画面の演出(ヒット・スキル・オーラ・KO)。見た目だけを担当し、勝敗や数値には関わらない。
 
@@ -1650,6 +1774,8 @@ function createFx({ arena, stage, fighters, chars, banner, chips, on }) {
 
 
 
+
+
 const reason = (it, { session }) =>
   it.needs?.includes('online') && !session.server ? 'サーバーに接続できません(サーバーを起動して http://localhost:3000 を開いてください)'
   : it.needs?.includes('account') && session.guest ? 'アカウント登録が必要です(画面左上のボタンから登録できます)'
@@ -1669,12 +1795,24 @@ const menuScreen = {
 
     const paintHud = () => {
       const { settings: s, session, profile: p } = store.get();
-      $('.hud').innerHTML = [
+      const guest = session.guest, info = guest ? { placed: false } : { placed: p.placed, tier: p.tier, div: p.div, gm: p.gm };
+      let name, total, pct, gtxt, tag = '';
+      if (guest) { name = 'ゲスト'; total = '―'; pct = 0; gtxt = 'ログインして配置戦を行うと、ランクが付きます'; }
+      else if (!p.placed) { name = '未配置'; total = '―'; pct = (p.pg / 5) * 100; gtxt = `配置戦 ${p.pg} / 5`; }
+      else if (p.tier >= 5) { name = p.gm ? 'グランドマスター' : 'マスター'; total = p.total; pct = p.gm ? 100 : Math.min(100, (p.lp / 200) * 100); gtxt = p.gm ? `${p.lp} LP` : `${p.lp} LP(グランドマスターまで あと${Math.max(0, 200 - p.lp)}LP)`; }
+      else { name = `${TIER_NAMES[p.tier]}${p.div}`; total = p.total; pct = p.lp; gtxt = `${p.lp} / 100 LP`; }
+      if (!guest && p.demo) tag = `降格戦 ${p.demo.w}勝${p.demo.l}敗`;
+      const card = s.hud.rank ? `<div class="rk" style="--rc:${rankColor(info)}">
+        <div class="rk-icon">${rankIcon(info, 'hud')}</div>
+        <div class="rk-body"><div class="rk-top"><span class="rk-name">${esc(name)}</span>${tag ? `<span class="rk-tag">${esc(tag)}</span>` : ''}</div>
+          <div class="rk-total">総合LP <b>${esc(total)}</b></div>
+          <div class="rk-gauge ${!guest && !p.placed ? 'seg' : ''}"><i style="width:${pct}%"></i><span>${esc(gtxt)}</span></div></div></div>` : '';
+      const chips = [
         s.hud.ign && ['プレイヤー', session.ign],
-        s.hud.rank && ['ランク', p.rank + (p.lp ? ` ${p.lp}LP` : '')],
-        s.hud.title && ['称号', titleName(s.title) ?? 'なし'],
+        s.hud.title && ['称号', titleName(equippedTitle(store.get())) ?? 'なし'],
         s.hud.streak && ['連勝', `${p.streak}`],
       ].filter(Boolean).map(([k, v]) => `<div class="chip"><small>${k}</small><b>${esc(v)}</b></div>`).join('');
+      $('.hud').innerHTML = `${card}<div class="chips">${chips}</div>`;
     };
     const paintList = () => btns.forEach((b, i) => {
       const off = !!reason(MENU_ITEMS[i], store.get());
@@ -1711,6 +1849,7 @@ const menuScreen = {
 };
 
 // ---- js/screens/settings.js
+
 
 
 
@@ -1755,15 +1894,15 @@ const settingsScreen = {
       saveSettings({ [t.id]: +t.value });
       if (t.id === 'se') sfx('ui_ok');
     });
-    el.addEventListener('change', e => {
+    el.addEventListener('change', async e => {
       const t = e.target, cur = store.get().settings;
       if (t.id === 'fx') saveSettings({ fx: t.value === '1' });
       else if (t.id === 'theme') saveSettings({ theme: t.value });
       else if (t.dataset.hud) saveSettings({ hud: { ...cur.hud, [t.dataset.hud]: t.checked } });
       else if (t.id === 'ign') {
-        const ok = /^[A-Za-z0-9_.-]{3,16}$/.test(t.value);
-        $('#ign-msg').textContent = ok ? '変更しました' : '3〜16文字の英数字と _ - . だけ使えます';
-        if (ok) { saveSettings({ ign: t.value }); store.set(st => ({ session: { ...st.session, ign: t.value } })); }
+        const r = await Auth.changeIgn(t.value.trim());
+        if (r.error) $('#ign-msg').textContent = r.error;
+        else { store.set(st => ({ session: { ...st.session, ign: r.user.ign } })); applyProfile(r.user); $('#ign-msg').textContent = '変更しました(アカウントに保存されました)'; }
       }
     });
     el.addEventListener('click', e => {
@@ -1907,7 +2046,7 @@ const battleScreen = {
         <div class="typing"><div class="t-disp"></div><div class="t-kana"></div><div class="t-rom"></div></div>
         <div class="hud-b">
           <div class="combo"><b id="combo">0</b>コンボ</div>
-          <div><div class="gauge"><div class="g-fill" id="g1"></div><i class="tick" style="left:${100 / 3}%"></i><i class="tick" style="left:${250 / 3}%"></i></div></div>
+          <div><div class="gauge"><div class="g-fill" id="g1"></div>${me.skills.map(sk => `<i class="tick" style="left:${(sk.cost / 300) * 100}%"></i>`).join('')}</div></div>
         </div>
         <div class="skills">${skillBox(me, true)}</div>
         <div class="overlay" hidden></div>
@@ -1955,7 +2094,7 @@ const battleScreen = {
       $('#g1').style.width = `${(s.p1.gauge / 300) * 100}%`;
       $('#g2').style.width = `${(s.p2.gauge / 300) * 100}%`;
       $$('.skill').forEach((x, i) => x.classList.toggle('ready', s.p1.gauge >= me.skills[i].cost));
-      $('.gauge').classList.toggle('hot', s.p1.gauge >= 100);
+      $('.gauge').classList.toggle('hot', s.p1.gauge >= Math.min(...me.skills.map(k => k.cost)));
       fx.auras(s);
     };
 
@@ -2141,10 +2280,12 @@ const battleScreen = {
 
 
 
+
+
 const matchingScreen = {
   mount(el, { store, go }) {
     const st = store.get(), mode = st.mode === 'ranked' ? 'ranked' : 'normal', ranked = mode === 'ranked';
-    const card = (p, side) => `<div class="mt-card ${side}"><small>${esc(p.title ?? '称号なし')}</small><b>${esc(p.ign)}</b><em>${esc(p.rank)}</em></div>`;
+    const card = (p, side) => `<div class="mt-card ${side}"><span class="mt-ico">${rankIcon(parseRank(p.rank), 'mt' + side)}</span><div><small>${esc(p.title ?? '称号なし')}</small><b>${esc(p.ign)}</b><em>${esc(p.rank)}</em></div></div>`;
     el.innerHTML = `<div class="mt">
       <div class="mt-mode">${ranked ? 'ランクマッチ' : '通常マッチ'}</div>
       <div class="mt-radar"><i></i><i></i><i></i><b></b></div>
@@ -2163,7 +2304,7 @@ const matchingScreen = {
         store.set({ match: { mode, firstTo: m.firstTo, opp: m.opp, foundSeq: m.seq } });
         $('.mt-radar').classList.add('ok'); $('.mt-msg').textContent = 'マッチ成立!'; $('.mt-act').hidden = true; $('.mt-sub').hidden = true;
         const found = $('.mt-found'); found.hidden = false;
-        found.innerHTML = `${card({ ign: s.session.ign, rank: s.profile.rank.split('(')[0].split(' ')[0], title: titleName(s.settings.title) }, 'l')}<span>VS</span>${card(m.opp, 'r')}`;
+        found.innerHTML = `${card({ ign: s.session.ign, rank: s.session.guest ? 'ゲスト' : s.profile.name, title: titleName(equippedTitle(s)) }, 'l')}<span>VS</span>${card(m.opp, 'r')}`;
         gone = setTimeout(() => go('draft'), 1300);
       }),
       conn.on('error', m => { clearInterval(tick); $('.mt-msg').textContent = m.msg ?? 'エラーが発生しました'; $('.mt-radar').hidden = true; $('#cancel').textContent = 'メニューへ戻る'; }),
@@ -2271,16 +2412,18 @@ const draftScreen = {
 
 
 
+
+
 const vsScreen = {
   mount(el, { store, go }) {
     const st = store.get(), v = st.match?.vs;
     if (!v) { go('menu'); return; }
     const me = charById(v.me.char), foe = charById(v.foe.char), ranked = v.mode === 'ranked';
-    const info = (c, ign, rank, title, side) => `<div class="vs-nm ${side}"><small>${esc(title ?? '称号なし')}</small><b>${esc(ign)}</b><em>${esc(rank)}</em><span>${c.name}(${c.role})</span></div>`;
+    const info = (c, ign, rank, title, side) => `<div class="vs-nm ${side}"><span class="vs-ico">${rankIcon(parseRank(rank), 'vs' + side)}</span><div><small>${esc(title ?? '称号なし')}</small><b>${esc(ign)}</b><em>${esc(rank)}</em><span>${c.name}(${c.role})</span></div></div>`;
     el.innerHTML = `<div class="vs">
       <div class="vs-head">${ranked ? 'ランクマッチ・2先取' : '通常マッチ・1本勝負'}<span>単語形式: ${esc(FORMATS.find(f => f.id === v.format)?.name ?? '')}</span></div>
       <div class="vs-stage"><div class="vs-p l">${charArt(me)}</div><div class="vs-mid"><span>VS</span></div><div class="vs-p r">${charArt(foe)}</div></div>
-      <div class="vs-info">${info(me, st.session.ign, st.match.myRank ?? st.profile.rank.split('(')[0].split(' ')[0], titleName(st.settings.title), 'l')}${info(foe, v.foe.ign, v.foe.rank, v.foe.title, 'r')}</div>
+      <div class="vs-info">${info(me, st.session.ign, st.session.guest ? 'ゲスト' : st.profile.name, titleName(equippedTitle(st)), 'l')}${info(foe, v.foe.ign, v.foe.rank, v.foe.title, 'r')}</div>
       <p class="vs-hint">Enter / クリックで準備完了(相手も準備できたらすぐ開始します)</p></div>`;
     sfx('vs');
     const ready = () => { conn.send({ t: 'ready' }); el.querySelector('.vs-hint').textContent = '準備完了。相手を待っています…'; };
@@ -2301,6 +2444,7 @@ const vsScreen = {
 
 
 
+
 const EVENT = {
   placed: '配置戦が終わり、ランクが決まりました!', promoted: '昇格しました!', demo_start: '降格戦が始まります(3試合中2勝で残留)',
   demo_stay: '降格戦に勝って、残留しました', demoted: '降格しました',
@@ -2316,7 +2460,7 @@ const resultScreen = {
     const dl = r?.delta ? `${r.delta > 0 ? '+' : '−'}${Math.abs(r.delta)} LP` : '';
     const names = (s.titles ?? []).map(id => TITLES.find(t => t.id === id)?.name).filter(Boolean);
     el.innerHTML = `<div class="rs ${s.win ? 'win' : ''}"><h1>${title}</h1>${s.firstTo > 1 ? `<p class="rs-score">${s.score[0]} - ${s.score[1]}</p>` : ''}<p class="note">${esc(WHY[s.reason] ?? '')}</p>
-      ${r?.ranked ? `<p class="rs-lp">${esc(r.before)} → ${esc(r.after)}${dl ? `<small>${dl}${r.placed ? '' : `(配置戦 ${r.pg}/5)`}</small>` : ''}</p>${r.event ? `<p class="rs-ev">${EVENT[r.event]}</p>` : ''}` : s.mode === 'ranked' ? '' : '<p class="rs-lp"><small>通常マッチではLPは動きません</small></p>'}
+      ${r?.ranked ? `<div class="rs-rank"><span class="rs-ico">${rankIcon(r.beforeIcon, 'rsb')}</span><span class="rs-arrow">→</span><span class="rs-ico new ${r.event ? 'ev' : ''}">${rankIcon(r.afterIcon, 'rsa')}</span></div><p class="rs-lp">${esc(r.before)} → ${esc(r.after)}${dl ? `<small>${dl}${r.placed ? '' : `(配置戦 ${r.pg}/5)`}</small>` : ''}</p>${r.event ? `<p class="rs-ev">${EVENT[r.event]}</p>` : ''}` : s.mode === 'ranked' ? '' : '<p class="rs-lp"><small>通常マッチではLPは動きません</small></p>'}
       <dl class="rs-stats"><dt>CPM</dt><dd>${st.cpm}</dd><dt>正しい打鍵</dt><dd>${st.hits}</dd><dt>ミス</dt><dd>${st.miss}</dd><dt>最大コンボ</dt><dd>${st.maxCombo}</dd></dl>
       <p class="rs-titles">${names.length ? `獲得した称号: ${names.map(n => `<b>${esc(n)}</b>`).join(' / ')}` : '<span class="note">新しい称号はありません</span>'}</p>
       <div class="row"><button class="btn primary" id="again">もう一度マッチング</button><button class="btn" id="menu">メニューへ</button></div></div>`;
@@ -2336,9 +2480,10 @@ const resultScreen = {
 const MAX = { hp: 1700, atk: 4, def: 0.25, crit: 0.3, critMul: 2 };
 const bar = (label, v, key, text) => `<div class="cx-bar"><span>${label}</span><i><u style="width:${Math.min(100, (v / MAX[key]) * 100)}%"></u></i><b>${text}</b></div>`;
 
+const MIN = 10; // これ未満の試合数では「データ収集中」と表示
 const codexScreen = {
   mount(el, { go }) {
-    let cur = 0;
+    let cur = 0, stats = null, failed = false;
     el.innerHTML = `<h1>キャラ図鑑</h1><div class="cx"><div class="cx-list">${CHARACTERS.map((c, i) =>
       `<button class="cx-item" data-i="${i}"><span class="cx-thumb">${charArt(c)}</span><b>${c.name}</b><small>${c.role}</small></button>`).join('')}</div>
       <section class="cx-detail panel"></section></div><div class="row"><button class="btn" id="back">メニューへ戻る</button></div>`;
@@ -2351,8 +2496,28 @@ const codexScreen = {
         ${bar('HP', c.hp, 'hp', c.hp)}${bar('攻撃力', c.atk, 'atk', c.atk)}${bar('防御', c.def, 'def', `${Math.round(c.def * 100)}%`)}${bar('会心率', c.crit, 'crit', `${Math.round(c.crit * 100)}%`)}${bar('会心倍率', c.critMul, 'critMul', `×${c.critMul}`)}
         <div class="cx-pas"><small>パッシブ</small><b>${esc(c.passive.name)}</b><span>${esc(c.passive.desc)}</span></div>
         ${c.skills.map((s, i) => `<div class="cx-sk"><small>スキル${i + 1}・ゲージ${s.cost}</small><b>${esc(s.name)}</b><span>${esc(s.desc)}</span></div>`).join('')}
-        <p class="note">使用率・勝率: --(オンライン対戦の実装後に表示されます)</p></div>`;
+        ${statBlock(c)}</div>`;
     };
+    const statBlock = c => {
+      if (failed) return '<div class="cx-st"><small>使用率・勝率</small><p class="note">サーバーに接続すると表示されます(サーバーを起動して http://localhost:3000 を開いてください)</p></div>';
+      if (!stats) return '<div class="cx-st"><small>使用率・勝率</small><p class="note">読み込み中…</p></div>';
+      const x = stats.list[c.id] ?? { picks: 0, wins: 0 }, share = stats.total ? x.picks / stats.total : 0, wr = x.picks ? x.wins / x.picks : 0;
+      const order = [...CHARACTERS].sort((a, b) => (stats.list[b.id]?.picks ?? 0) - (stats.list[a.id]?.picks ?? 0)), rank = order.findIndex(o => o.id === c.id) + 1;
+      const mine = stats.mine?.[c.id], few = x.picks < MIN;
+      return `<div class="cx-st"><small>使用率・勝率(全プレイヤーの対戦。${x.picks}試合)${few ? ' ― データ収集中' : ''}</small>
+        <div class="cx-bar"><span>使用率</span><i><u style="width:${Math.min(100, share * 100 * 2.5)}%"></u></i><b>${(share * 100).toFixed(1)}%</b></div>
+        <div class="cx-bar"><span>勝率</span><i class="wr"><u style="width:${wr * 100}%"></u></i><b>${x.picks ? (wr * 100).toFixed(1) + '%' : '―'}</b></div>
+        <p class="note">${x.picks ? `使用率 ${rank}位 / 8体` : 'まだ対戦の記録がありません'}${mine ? `　あなた: ${mine.played}戦 ${mine.wins}勝(${((mine.wins / mine.played) * 100).toFixed(0)}%)` : ''}</p></div>`;
+    };
+    (async () => {
+      try {
+        let token = null; try { token = localStorage.getItem('tb.token'); } catch { /* 無視 */ }
+        const r = await fetch('/api/charstats', { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        if (!r.ok) throw new Error('x');
+        stats = await r.json();
+      } catch { failed = true; }
+      paint();
+    })();
     el.addEventListener('click', e => {
       const b = e.target.closest('.cx-item');
       if (b) { cur = +b.dataset.i; paint(); } else if (e.target.id === 'back') go('menu');
@@ -2373,7 +2538,6 @@ const codexScreen = {
 
 
 
-
 const titlesScreen = {
   mount(el, { store, go }) {
     let cat = 'all';
@@ -2381,7 +2545,7 @@ const titlesScreen = {
       <div class="tt-list"></div><div class="row"><button class="btn" id="back">メニューへ戻る</button></div>`;
     const $ = q => el.querySelector(q);
     const paint = () => {
-      const st = store.get(), own = new Set(st.profile.titles), eq = st.settings.title;
+      const st = store.get(), own = new Set(st.profile.titles), eq = equippedTitle(st);
       el.querySelectorAll('[data-cat]').forEach(b => b.setAttribute('aria-pressed', b.dataset.cat === cat));
       $('.tt-count').textContent = `獲得 ${own.size} / ${TITLES.length}${eq ? '' : '　装備中: なし'}`;
       $('.tt-list').innerHTML = TITLES.filter(t => cat === 'all' || t.cat === cat).map(t => {
@@ -2389,12 +2553,11 @@ const titlesScreen = {
         return `<div class="tt-item ${has ? 'own' : ''} ${eq === t.id ? 'eq' : ''}" style="--rc:${r.color}"><div><small>${r.name}</small><b>${hide ? '？？？？？' : esc(t.name)}</b><span>${hide ? '条件: ？？？' : esc(t.cond)}</span></div>
           ${has ? `<button class="btn ${eq === t.id ? '' : 'primary'}" data-eq="${t.id}">${eq === t.id ? '外す' : '装備'}</button>` : '<em>未獲得</em>'}</div>`;
       }).join('');
-      if (!own.size) $('.tt-list').insertAdjacentHTML('afterbegin', '<p class="note">称号は通常マッチ・ランクマッチの記録で獲得できます(開発中の確認用に、URLの末尾に ?unlock=1 を付けると全称号を表示します)。</p>');
     };
     el.addEventListener('click', e => {
       const c = e.target.closest('[data-cat]'), q = e.target.closest('[data-eq]');
       if (c) { cat = c.dataset.cat; paint(); }
-      else if (q) { const id = store.get().settings.title === q.dataset.eq ? null : q.dataset.eq; saveSettings({ title: id }); if (!store.get().session.guest) conn.send({ t: 'equip', id }); paint(); }
+      else if (q) { const own = store.get().profile.titles.includes(q.dataset.eq); if (!own) return; const id = equippedTitle(store.get()) === q.dataset.eq ? null : q.dataset.eq; saveSettings({ title: id }); paint(); }
       else if (e.target.id === 'back') go('menu');
     });
     const onKey = e => { if (e.key === 'Escape') go('menu'); };

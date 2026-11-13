@@ -22,6 +22,21 @@ assert.equal((await post('/api/login', { email: 'taro.yamada@gmail.com', passwor
 const li = await post('/api/login', { email: 'TARO.YAMADA@gmail.com', password: 'password123' }); assert.equal(li.s, 200); assert.equal(li.j.user.ign, 'Taro_01');
 assert.equal((await get('/api/me', li.j.token)).j.user.rank, '未配置(配置戦 0/5)'); assert.equal((await get('/api/me', 'bad')).s, 401);
 const b = await post('/api/register', { email: 'hanako@gmail.com', password: 'password456', ign: 'Hanako_02' }); const tokB = b.j.token;
+
+// ---- 設定(アカウントごと)・称号の装備・プレイヤー名の変更 ----
+{ const put = async (body, token) => { const r = await fetch(base + '/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body) }); return { s: r.status, j: await r.json() }; };
+  assert.equal((await put({ theme: 'light' }, 'bad')).s, 401);
+  const r1 = await put({ theme: 'light', bgm: 30, se: 200, fx: false, title: 's150', hud: { rank: false }, skillKeys: ['Shift+KeyA', 'Alt+KeyB'] }, tokB);
+  assert.equal(r1.j.settings.theme, 'light'); assert.equal(r1.j.settings.se, 100); assert.equal(r1.j.settings.title, null, '持っていない称号は装備できない');
+  assert.equal(r1.j.settings.hud.rank, false); assert.equal(r1.j.settings.hud.ign, true); assert.deepEqual(r1.j.settings.skillKeys, ['Shift+KeyA', 'Alt+KeyB']);
+  assert.deepEqual((await put({ skillKeys: ['KeyA', 'KeyB'] }, tokB)).j.settings.skillKeys, ['Shift+KeyA', 'Alt+KeyB'], '修飾キーなしは拒否');
+  assert.deepEqual((await get('/api/me', tokA)).j.user.settings, {}, '別のアカウントの設定は変わらない');
+  const dbm = (await import('../server/db.js')).get(), uB = Object.values(dbm.users).find(u => u.ign === 'Hanako_02'); uB.titles.push('s150');
+  assert.equal((await put({ title: 's150' }, tokB)).j.settings.title, 's150'); assert.equal((await get('/api/me', tokB)).j.user.settings.title, 's150'); assert.equal((await put({ title: null }, tokB)).j.settings.title, null);
+  const ign = (v, t) => post('/api/ign', { ign: v }, t);
+  assert.equal((await ign('Taro_01', tokB)).j.error, 'このプレイヤー名はすでに使われています'); assert.ok((await ign('a', tokB)).j.error.includes('3〜16'));
+  assert.equal((await ign('Hanako_New', tokB)).j.user.ign, 'Hanako_New'); assert.equal((await ign('Hanako_02', tokB)).j.user.ign, 'Hanako_02');
+}
 assert.equal((await post('/api/logout', {}, li.j.token)).j.ok, true); assert.equal((await get('/api/me', li.j.token)).s, 401);
 
 // ---- クライアント役(正しい打ち方で打つ) ----
@@ -61,7 +76,7 @@ function client(name, token, { err = 0, cpmMs = 70, skill = true } = {}) {
 { const g = client('G', null); await g.ready(); g.send({ t: 'queue', mode: 'ranked' }); await new Promise(r => setTimeout(r, 200)); assert.equal(g.errors[0]?.code, 'login'); g.ws.close(); }
 { const n = client('A', tokA, { err: 0.02 }); await n.ready(); n.send({ t: 'queue', mode: 'normal' });
   const e = await n.waitEnd(); assert.equal(e.mode, 'normal'); assert.ok(['ko', 'time', 'count', 'draw'].includes(e.reason), e.reason);
-  assert.ok(n.vs.foe.ign.length > 2); assert.equal(e.rank.ranked, false); n.ws.close(); await new Promise(r => setTimeout(r, 200));
+  assert.ok(n.vs.foe.ign.length > 2); assert.equal(e.rank.ranked, false); assert.ok(e.titles.length > 0, `CPU戦でも称号を獲得できる: ${e.titles}`); console.log('CPU戦で獲得した称号:', e.titles.join(',')); n.ws.close(); await new Promise(r => setTimeout(r, 200));
   const me = (await get('/api/me', tokA)).j.user; assert.equal(me.games, 1); assert.ok(me.rank.startsWith('未配置')); }
 
 // ---- ランクマッチ(2人・配置戦。2先取) ----
@@ -84,6 +99,8 @@ function client(name, token, { err = 0, cpmMs = 70, skill = true } = {}) {
 // ---- 不正な入力 / 保存 ----
 { const x = client('X', tokA); await x.ready(); x.ws.send('not json'); x.ws.send(JSON.stringify({ t: 'key', c: 'a' })); x.ws.send(JSON.stringify({ t: 'ban', ids: ['x'] })); x.ws.close(); }
 const lb = (await get('/api/leaderboard')).j.list; assert.ok(Array.isArray(lb));
+{ const cs = (await get('/api/charstats', tokA)).j; assert.ok(cs.total >= 6, `キャラ使用数 ${cs.total}`); assert.ok(Object.values(cs.list).every(x => x.wins <= x.picks));
+  assert.ok(Object.keys(cs.mine).length >= 1); const me = (await get('/api/me', tokA)).j.user; assert.equal(typeof me.totalLp, 'number'); assert.equal(me.tier, 0); }
 assert.equal((await fetch(base + '/server/server.js')).status, 404); assert.equal((await fetch(base + '/data/db.json')).status, 404); assert.equal((await fetch(base + '/../package.json')).status === 200 || true, true);
 const { flush } = await import('../server/db.js'); flush(); assert.ok(JSON.parse(fs.readFileSync(tmp, 'utf8')).users);
 console.log('オンライン通信のテストに成功'); fs.rmSync(tmp, { force: true }); process.exit(0);

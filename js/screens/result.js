@@ -2,6 +2,7 @@ import { TITLES } from '../data/titles.js';
 import { applyProfile } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 import { esc } from '../core/dom.js';
+import { rankIcon } from '../data/rank_icons.js';
 
 const EVENT = {
   placed: '配置戦が終わり、ランクが決まりました!', promoted: '昇格しました!', demo_start: '降格戦が始まります(3試合中2勝で残留)',
@@ -18,7 +19,7 @@ export default {
     const dl = r?.delta ? `${r.delta > 0 ? '+' : '−'}${Math.abs(r.delta)} LP` : '';
     const names = (s.titles ?? []).map(id => TITLES.find(t => t.id === id)?.name).filter(Boolean);
     el.innerHTML = `<div class="rs ${s.win ? 'win' : ''}"><h1>${title}</h1>${s.firstTo > 1 ? `<p class="rs-score">${s.score[0]} - ${s.score[1]}</p>` : ''}<p class="note">${esc(WHY[s.reason] ?? '')}</p>
-      ${r?.ranked ? `<p class="rs-lp">${esc(r.before)} → ${esc(r.after)}${dl ? `<small>${dl}${r.placed ? '' : `(配置戦 ${r.pg}/5)`}</small>` : ''}</p>${r.event ? `<p class="rs-ev">${EVENT[r.event]}</p>` : ''}` : s.mode === 'ranked' ? '' : '<p class="rs-lp"><small>通常マッチではLPは動きません</small></p>'}
+      ${r?.ranked ? `<div class="rs-rank"><span class="rs-ico">${rankIcon(r.beforeIcon, 'rsb')}</span><span class="rs-arrow">→</span><span class="rs-ico new ${r.event ? 'ev' : ''}">${rankIcon(r.afterIcon, 'rsa')}</span></div><p class="rs-lp">${esc(r.before)} → ${esc(r.after)}${dl ? `<small>${dl}${r.placed ? '' : `(配置戦 ${r.pg}/5)`}</small>` : ''}</p>${r.event ? `<p class="rs-ev">${EVENT[r.event]}</p>` : ''}` : s.mode === 'ranked' ? '' : '<p class="rs-lp"><small>通常マッチではLPは動きません</small></p>'}
       <dl class="rs-stats"><dt>CPM</dt><dd>${st.cpm}</dd><dt>正しい打鍵</dt><dd>${st.hits}</dd><dt>ミス</dt><dd>${st.miss}</dd><dt>最大コンボ</dt><dd>${st.maxCombo}</dd></dl>
       <p class="rs-titles">${names.length ? `獲得した称号: ${names.map(n => `<b>${esc(n)}</b>`).join(' / ')}` : '<span class="note">新しい称号はありません</span>'}</p>
       <div class="row"><button class="btn primary" id="again">もう一度マッチング</button><button class="btn" id="menu">メニューへ</button></div></div>`;

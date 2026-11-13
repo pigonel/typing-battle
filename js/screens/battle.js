@@ -35,7 +35,7 @@ export default {
         <div class="typing"><div class="t-disp"></div><div class="t-kana"></div><div class="t-rom"></div></div>
         <div class="hud-b">
           <div class="combo"><b id="combo">0</b>コンボ</div>
-          <div><div class="gauge"><div class="g-fill" id="g1"></div><i class="tick" style="left:${100 / 3}%"></i><i class="tick" style="left:${250 / 3}%"></i></div></div>
+          <div><div class="gauge"><div class="g-fill" id="g1"></div>${me.skills.map(sk => `<i class="tick" style="left:${(sk.cost / 300) * 100}%"></i>`).join('')}</div></div>
         </div>
         <div class="skills">${skillBox(me, true)}</div>
         <div class="overlay" hidden></div>
@@ -83,7 +83,7 @@ export default {
       $('#g1').style.width = `${(s.p1.gauge / 300) * 100}%`;
       $('#g2').style.width = `${(s.p2.gauge / 300) * 100}%`;
       $$('.skill').forEach((x, i) => x.classList.toggle('ready', s.p1.gauge >= me.skills[i].cost));
-      $('.gauge').classList.toggle('hot', s.p1.gauge >= 100);
+      $('.gauge').classList.toggle('hot', s.p1.gauge >= Math.min(...me.skills.map(k => k.cost)));
       fx.auras(s);
     };
 

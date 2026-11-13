@@ -52,7 +52,7 @@ console.log('すべてのテストに成功');
   const by = id => CHARACTERS.find(c => c.id === id);
   const mkB = (a, b) => createBattle({ chars: [by(a), by(b)], rng: () => 0.99 });
   { const b = mkB('saint', 'golem'), c = mkB('thief', 'golem'); b.hit('p2'); c.hit('p2'); const d1 = by('saint').hp - b.state().p1.hp, d2 = by('thief').hp - c.state().p1.hp; assert.ok(Math.abs(d1 / d2 - (1 - 0.05 - by('saint').def) / (1 - by('thief').def)) < 1e-6, '聖女: 被ダメージ5%カット'); }
-  { const b = mkB('monk', 'golem'); for (let i = 0; i < 20; i++) b.hit('p1'); b.miss('p1'); assert.equal(b.state().p1.combo, 10, '武闘家: コンボ半分残る'); }
+  { const b = mkB('monk', 'golem'); for (let i = 0; i < 20; i++) b.hit('p1'); b.miss('p1'); assert.equal(b.state().p1.combo, 10, '武闘家: ミスでコンボが10減る'); b.miss('p1'); b.miss('p1'); assert.equal(b.state().p1.combo, 0, '武闘家: 0未満にはならない'); }
   { const b = mkB('witch', 'golem'); b.miss('p1'); const before = b.state().p1.hp; b.hit('p1'); assert.ok(b.state().p1.hp > before, '魔女: 吸命'); }
   { const b = mkB('golem', 'thief'); for (let i = 0; i < 40; i++) b.hit('p2'); const h = b.state().p1.hp; b.step(10); assert.ok(b.state().p1.hp > h, 'ゴーレム: 再生'); }
   { const b = mkB('thief', 'golem'), c = mkB('thief', 'golem'); b.hit('p1'); const e0 = b.drain()[0].dmg; c.step(13); c.hit('p1'); const e1 = c.drain().find(e => e.type === 'hit').dmg; assert.ok(Math.abs(e0 / e1 - 1.15) < 1e-6, 'シーフ: 開始12秒は与ダメージ1.15倍'); }
@@ -60,3 +60,14 @@ console.log('すべてのテストに成功');
 for (const [f, n] of Object.entries({ daily: 100, anime: 100, yoji: 100, english: 100 })) assert.ok(WORDS[f].length >= n, `${f} は${n}語以上`);
 assert.ok(WORDS.text.length >= 50, '長文は50文以上');
 console.log('パッシブ・単語数のテストに成功');
+
+{ // 新しいスキル・必要ゲージ
+  const by = id => CHARACTERS.find(c => c.id === id);
+  assert.deepEqual(by('saint').skills.map(k => k.cost), [75, 175]); assert.deepEqual(by('witch').skills.map(k => k.cost), [125, 200]); assert.deepEqual(by('phantom').skills.map(k => k.cost), [125, 250]);
+  const b = createBattle({ chars: [by('phantom'), by('thief')], rng: () => 0.99 });
+  for (let i = 0; i < 120; i++) b.hit('p2'); // 相手のゲージとコンボを溜める
+  const before = b.state().p2; for (let i = 0; i < 300 && b.state().p1.gauge < 250; i++) b.hit('p1');
+  assert.ok(b.skill('p1', 1), 'ファントムのスキル2'); const after = b.state();
+  assert.equal(after.p2.combo, 0); assert.ok(after.p2.gauge <= before.gauge * 0.25 + 3, `ゲージが25%まで減る(${before.gauge}→${after.p2.gauge})`);
+  assert.ok(after.p2.fx.includes('atkDown')); }
+console.log('スキル調整のテストに成功');

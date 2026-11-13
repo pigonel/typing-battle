@@ -1,4 +1,5 @@
-import { saveSettings } from '../core/state.js';
+import { saveSettings, applyProfile } from '../core/state.js';
+import { Auth } from '../core/auth.js';
 import { esc } from '../core/dom.js';
 import { sfx } from '../core/audio.js';
 
@@ -42,15 +43,15 @@ export default {
       saveSettings({ [t.id]: +t.value });
       if (t.id === 'se') sfx('ui_ok');
     });
-    el.addEventListener('change', e => {
+    el.addEventListener('change', async e => {
       const t = e.target, cur = store.get().settings;
       if (t.id === 'fx') saveSettings({ fx: t.value === '1' });
       else if (t.id === 'theme') saveSettings({ theme: t.value });
       else if (t.dataset.hud) saveSettings({ hud: { ...cur.hud, [t.dataset.hud]: t.checked } });
       else if (t.id === 'ign') {
-        const ok = /^[A-Za-z0-9_.-]{3,16}$/.test(t.value);
-        $('#ign-msg').textContent = ok ? '変更しました' : '3〜16文字の英数字と _ - . だけ使えます';
-        if (ok) { saveSettings({ ign: t.value }); store.set(st => ({ session: { ...st.session, ign: t.value } })); }
+        const r = await Auth.changeIgn(t.value.trim());
+        if (r.error) $('#ign-msg').textContent = r.error;
+        else { store.set(st => ({ session: { ...st.session, ign: r.user.ign } })); applyProfile(r.user); $('#ign-msg').textContent = '変更しました(アカウントに保存されました)'; }
       }
     });
     el.addEventListener('click', e => {

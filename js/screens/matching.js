@@ -1,12 +1,14 @@
 import { conn } from '../net/conn.js';
 import { sfx } from '../core/audio.js';
 import { esc } from '../core/dom.js';
+import { equippedTitle } from '../core/state.js';
 import { titleName } from '../data/titles.js';
+import { rankIcon, parseRank } from '../data/rank_icons.js';
 
 export default {
   mount(el, { store, go }) {
     const st = store.get(), mode = st.mode === 'ranked' ? 'ranked' : 'normal', ranked = mode === 'ranked';
-    const card = (p, side) => `<div class="mt-card ${side}"><small>${esc(p.title ?? '称号なし')}</small><b>${esc(p.ign)}</b><em>${esc(p.rank)}</em></div>`;
+    const card = (p, side) => `<div class="mt-card ${side}"><span class="mt-ico">${rankIcon(parseRank(p.rank), 'mt' + side)}</span><div><small>${esc(p.title ?? '称号なし')}</small><b>${esc(p.ign)}</b><em>${esc(p.rank)}</em></div></div>`;
     el.innerHTML = `<div class="mt">
       <div class="mt-mode">${ranked ? 'ランクマッチ' : '通常マッチ'}</div>
       <div class="mt-radar"><i></i><i></i><i></i><b></b></div>
@@ -25,7 +27,7 @@ export default {
         store.set({ match: { mode, firstTo: m.firstTo, opp: m.opp, foundSeq: m.seq } });
         $('.mt-radar').classList.add('ok'); $('.mt-msg').textContent = 'マッチ成立!'; $('.mt-act').hidden = true; $('.mt-sub').hidden = true;
         const found = $('.mt-found'); found.hidden = false;
-        found.innerHTML = `${card({ ign: s.session.ign, rank: s.profile.rank.split('(')[0].split(' ')[0], title: titleName(s.settings.title) }, 'l')}<span>VS</span>${card(m.opp, 'r')}`;
+        found.innerHTML = `${card({ ign: s.session.ign, rank: s.session.guest ? 'ゲスト' : s.profile.name, title: titleName(equippedTitle(s)) }, 'l')}<span>VS</span>${card(m.opp, 'r')}`;
         gone = setTimeout(() => go('draft'), 1300);
       }),
       conn.on('error', m => { clearInterval(tick); $('.mt-msg').textContent = m.msg ?? 'エラーが発生しました'; $('.mt-radar').hidden = true; $('#cancel').textContent = 'メニューへ戻る'; }),

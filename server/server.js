@@ -12,6 +12,7 @@ import { evalTitles } from './titles_eval.js';
 import { Match } from './match.js';
 import { Matchmaker } from './queue.js';
 import { TITLES } from '../js/data/titles.js';
+import { cleanSettings } from './settings.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = +process.env.PORT || 3000;
@@ -36,6 +37,10 @@ const ipOf = req => req.socket.remoteAddress || '';
 
 async function api(req, res, url) {
   if (req.method === 'GET' && url.pathname === '/api/health') return json(res, 200, { ok: true, online: conns.size });
+  if (req.method === 'GET' && url.pathname === '/api/charstats') { // キャラの使用数・勝利数(全プレイヤー) と、自分の戦績
+    const u = Auth.userByToken(bearer(req)), all = DB.get().charStats ?? {}, mine = u?.stats.charsPlayed ?? {}, won = u?.stats.charsWon ?? {};
+    return json(res, 200, { total: Object.values(all).reduce((a, c) => a + c.picks, 0), list: all, mine: Object.fromEntries(Object.keys(mine).map(k => [k, { played: mine[k], wins: won[k] ?? 0 }])) });
+  }
   if (req.method === 'GET' && url.pathname === '/api/leaderboard') return json(res, 200, { list: Auth.leaderboard(50) });
   if (req.method === 'GET' && url.pathname === '/api/me') {
     const u = Auth.userByToken(bearer(req));
@@ -48,6 +53,18 @@ async function api(req, res, url) {
   if (req.method === 'POST' && url.pathname === '/api/login') {
     const r = Auth.login(await readBody(req), ipOf(req));
     return r.error ? json(res, 400, { error: r.error }) : json(res, 200, { token: r.token, user: Auth.profileOf(r.user) });
+  }
+  if (req.method === 'PUT' && url.pathname === '/api/settings') { // 設定はアカウントごとに保存
+    const u = Auth.userByToken(bearer(req));
+    if (!u) return json(res, 401, { error: 'ログインが必要です' });
+    u.settings = cleanSettings(await readBody(req), u); DB.save();
+    return json(res, 200, { settings: u.settings });
+  }
+  if (req.method === 'POST' && url.pathname === '/api/ign') {
+    const u = Auth.userByToken(bearer(req));
+    if (!u) return json(res, 401, { error: 'ログインが必要です' });
+    const r = Auth.changeIgn(u, (await readBody(req)).ign);
+    return r.error ? json(res, 400, { error: r.error }) : json(res, 200, { user: Auth.profileOf(u) });
   }
   if (req.method === 'POST' && url.pathname === '/api/logout') { Auth.logout(bearer(req)); return json(res, 200, { ok: true }); }
   json(res, 404, { error: 'not found' });
@@ -76,8 +93,12 @@ function applyResults({ match, reason, leaver, stats }) {
   const pre = match.players.map(p => (p.user ? { idx: p.user.rank.placed ? divIndex(p.user.rank) : null, mmr: p.user.rank.mmr } : null));
   return match.players.map((p, i) => {
     const u = p.user, opp = match.players[1 - i], st = stats[i];
+    if (st.char) { // キャラの使用数・勝利数(ゲストも含む。切断などで選択前に終わった試合は除く)
+      const cs = (DB.get().charStats ??= {}); cs[st.char] ??= { picks: 0, wins: 0 };
+      cs[st.char].picks++; if (st.win) cs[st.char].wins++;
+    }
     if (!u) return {};
-    const oppPre = pre[1 - i], r = u.rank, beforeLabel = rankLabel(r);
+    const oppPre = pre[1 - i], r = u.rank, beforeLabel = rankLabel(r), iconOf = () => ({ placed: r.placed, tier: r.tier, div: r.div, gm: Auth.gmSet().has(u.id) }), beforeIcon = iconOf();
     const res = applyMatch(r, { win: st.win, oppIdx: oppPre?.idx ?? null, oppMmr: oppPre?.mmr ?? cpuMmr(u), ranked, cpu: !!opp.cpu });
     let delta = res.delta;
     if (st.disconnected && ranked && r.placed && !r.demo) { penalize(r); delta -= 10; }
@@ -91,15 +112,16 @@ function applyResults({ match, reason, leaver, stats }) {
       if (!s.formatsWon.includes(st.format)) s.formatsWon.push(st.format);
       if (st.miss === 0 && !s.formatsNoMiss.includes(st.format)) s.formatsNoMiss.push(st.format);
     }
+    if (st.char) (s.charsPlayed ??= {})[st.char] = (s.charsPlayed[st.char] ?? 0) + 1;
     if (st.win && st.char) s.charsWon[st.char] = (s.charsWon[st.char] ?? 0) + 1;
     const fresh = evalTitles(u, st, { event: res.event, isGm: Auth.gmSet().has(u.id) });
     DB.save();
-    return { rank: { ranked, before: beforeLabel, after: rankLabel(r), delta, event: res.event, placed: r.placed, pg: r.pg }, titles: fresh, profile: Auth.profileOf(u) };
+    return { rank: { ranked, before: beforeLabel, after: rankLabel(r), delta, event: res.event, placed: r.placed, pg: r.pg, beforeIcon, afterIcon: iconOf() }, titles: fresh, profile: Auth.profileOf(u) };
   });
 }
 
 // ---------- マッチング ----------
-const toPlayer = e => ({ ws: e.c.ws, user: e.c.user, ign: e.c.ign, title: e.c.user?.equipped ? TITLES.find(t => t.id === e.c.user.equipped)?.name ?? null : null,
+const toPlayer = e => ({ ws: e.c.ws, user: e.c.user, ign: e.c.ign, title: e.c.user?.settings?.title ? TITLES.find(t => t.id === e.c.user.settings.title)?.name ?? null : null,
   rankText: e.c.user ? (e.c.user.rank.placed ? rankName(e.c.user.rank, Auth.gmSet().has(e.c.user.id)) : '未配置') : 'ゲスト', c: e.c });
 function startMatch(match, players) { players.forEach(p => { p.c.match = match; p.c.player = p; }); }
 const mm = new Matchmaker({
@@ -144,10 +166,7 @@ server.on('upgrade', (req, socket, head) => {
         mm.add({ c, mode: m.mode, rank: c.user ? c.user.rank : newRank() });
         send({ t: 'queued', mode: m.mode });
       } else if (m.t === 'cancel') { mm.remove(c); send({ t: 'cancelled' }); }
-      else if (m.t === 'equip' && c.user) {
-        if (m.id === null || c.user.titles.includes(m.id)) { c.user.equipped = m.id; DB.save(); }
-        send({ t: 'profile', user: Auth.profileOf(c.user), equipped: c.user.equipped ?? null });
-      } else if (m.t === 'profile' && c.user) send({ t: 'profile', user: Auth.profileOf(c.user), equipped: c.user.equipped ?? null });
+      else if (m.t === 'profile' && c.user) send({ t: 'profile', user: Auth.profileOf(c.user) });
     };
     ws.onclose = () => {
       conns.delete(c); mm.remove(c);

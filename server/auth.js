@@ -79,7 +79,17 @@ export function gmSet() {
 export function profileOf(u) {
   const gm = gmSet().has(u.id);
   return { ign: u.ign, email: u.email, rank: rankLabel(u.rank, gm), rankName: rankName(u.rank, gm), placed: u.rank.placed, lp: u.rank.lp, demo: u.rank.demo, pg: u.rank.pg,
-    streak: u.streak, bestStreak: u.bestStreak, wins: u.wins, games: u.games, titles: u.titles, gm, equipped: u.equipped ?? null };
+    streak: u.streak, bestStreak: u.bestStreak, wins: u.wins, games: u.games, titles: u.titles, gm, settings: u.settings ?? {},
+    tier: u.rank.tier, div: u.rank.div, totalLp: u.rank.placed ? rankValue(u.rank) : 0 };
+}
+// プレイヤー名の変更(英数字と _ - . の3〜16文字。ほかの人と重複不可)
+export function changeIgn(u, ign) {
+  if (!IGN_RE.test(ign ?? '')) return { error: 'プレイヤー名は3〜16文字の英数字と _ - . だけ使えます' };
+  if (NG.some(w => ign.toLowerCase().includes(w))) return { error: 'このプレイヤー名は使えません' };
+  const db = get(), owner = db.igns[ign.toLowerCase()];
+  if (owner && owner !== u.id) return { error: 'このプレイヤー名はすでに使われています' };
+  delete db.igns[u.ign.toLowerCase()]; db.igns[ign.toLowerCase()] = u.id; u.ign = ign; save();
+  return { user: u };
 }
 export function leaderboard(n = 50) {
   const gm = gmSet();

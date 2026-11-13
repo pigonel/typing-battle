@@ -25,6 +25,7 @@ async function api(path, method, body) {
 export const Auth = {
   async register({ email, password, ign }) { const r = await api('/api/register', 'POST', { email: email.trim(), password, ign }); if (r.token) setToken(r.token); return r.error ? { error: r.error } : { user: r.user }; },
   async login({ email, password }) { const r = await api('/api/login', 'POST', { email: email.trim(), password }); if (r.token) setToken(r.token); return r.error ? { error: r.error } : { user: r.user }; },
+  async changeIgn(ign) { const r = await api('/api/ign', 'POST', { ign }); return r.error ? { error: r.error } : { user: r.user }; },
   async logout() { await api('/api/logout', 'POST', {}); setToken(null); },
   async restore() {
     if (!getToken()) return null;

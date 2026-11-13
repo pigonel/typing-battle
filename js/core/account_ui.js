@@ -1,5 +1,5 @@
 // 画面左上のアカウント表示と、ログイン/新規登録のダイアログ
-import { store, applyUser, clearUser } from './state.js';
+import { store, applyUser, clearUser, syncNow } from './state.js';
 import { Auth, validate } from './auth.js';
 import { conn } from '../net/conn.js';
 import { esc } from './dom.js';
@@ -41,7 +41,7 @@ export function mountAccountBar(host) {
     const a = e.target.closest('[data-a]')?.dataset.a, t = e.target.closest('[data-tab]')?.dataset.tab;
     if (a === 'open') open();
     else if (a === 'close' || e.target === modal) close();
-    else if (a === 'out') { await Auth.logout(); clearUser(); conn.reconnect(); }
+    else if (a === 'out') { await syncNow(); await Auth.logout(); clearUser(); conn.reconnect(); }
     else if (t) { tab = t; err = ''; paintModal(); }
   });
   host.addEventListener('submit', async e => {

@@ -280,3 +280,35 @@ input[type=checkbox]{margin-right:8px}
 .cutin.r{flex-direction:row-reverse;text-align:right}
 .ci-art{height:170px;margin-top:-30px}.ci-art svg{height:100%;width:auto}.cutin.r .ci-art svg{transform:scaleX(-1)}
 .ci-txt{display:grid}.ci-txt small{color:#fff;opacity:.85;font-size:14px}.ci-txt b{font-size:54px;font-style:italic;font-weight:900;line-height:1.1;color:#fff;text-shadow:0 4px 0 #000a,0 0 20px #0008}
+
+/* ---- ランクのアイコン・ランクカード ---- */
+.ri{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 3px 0 rgba(0,0,0,.25))}
+.ri-sp{animation:spark 1.8s ease-in-out infinite}
+@keyframes spark{50%{opacity:.15;transform:scale(.6)}}
+.ri.hot .ri-glow{animation:glow 1.6s ease-in-out infinite alternate}
+@keyframes glow{to{opacity:.9}}
+.ri.hot .ri-wing{animation:wing 2.4s ease-in-out infinite;transform-origin:50px 50px}
+@keyframes wing{50%{transform:translateY(-2px) scaleY(1.03)}}
+.hud{align-items:stretch}
+.chips{display:flex;flex-wrap:wrap;gap:10px;align-content:center}
+.rk{--rc:#8d95b4;display:flex;gap:18px;align-items:center;flex:1 1 560px;min-width:440px;max-width:760px;padding:10px 24px 10px 14px;background:linear-gradient(100deg,color-mix(in srgb,var(--rc) 26%,var(--panel)),var(--panel) 72%);border:1px solid var(--line);border-left:6px solid var(--rc)}
+.rk-icon{flex:none;width:128px;height:120px;margin:-10px -14px -10px -8px}
+.rk-body{flex:1;display:grid;gap:4px;min-width:0}
+.rk-top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.rk-name{font-size:28px;font-weight:900;line-height:1.1}
+.rk-tag{font-size:12px;font-weight:800;padding:1px 10px;background:#ff5a4d;color:#fff;transform:skewX(-10deg)}
+.rk-total{font-size:13px;color:var(--sub)}.rk-total b{font-size:18px;color:var(--text);font-variant-numeric:tabular-nums}
+.rk-gauge{position:relative;height:26px;background:var(--bg);border:1px solid var(--line);overflow:hidden;transform:skewX(-10deg)}
+.rk-gauge i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--rc),color-mix(in srgb,var(--rc) 55%,#fff));box-shadow:0 0 16px var(--rc);transition:width .6s ease-out}
+.rk-gauge::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(25% - 1px),#0006 calc(25% - 1px) 25%)}
+.rk-gauge.seg::after{background:repeating-linear-gradient(90deg,transparent 0 calc(20% - 2px),#000a calc(20% - 2px) 20%)}
+.rk-gauge span{position:absolute;inset:0;z-index:1;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000c;transform:skewX(10deg);white-space:nowrap}
+.mt-card{align-items:center;display:flex;gap:12px}.mt-card.r{flex-direction:row-reverse}.mt-ico{width:54px;height:56px;flex:none}
+.vs-nm{display:flex;align-items:center;gap:14px}.vs-nm.r{flex-direction:row-reverse}.vs-nm>div{display:grid}.vs-ico{width:70px;height:72px;flex:none}
+.rs-rank{display:flex;align-items:center;justify-content:center;gap:26px;margin:8px 0 0}
+.rs-ico{width:120px;height:124px}.rs-arrow{font-size:40px;font-weight:900;color:var(--hit)}
+.rs-ico.new.ev{animation:promo 1s ease-out}.rs-ico.new.ev .ri{filter:drop-shadow(0 0 22px var(--hit))}
+@keyframes promo{from{transform:scale(.3) rotate(-12deg);opacity:0}60%{transform:scale(1.25)}}
+.rs-ev{margin:0;font-size:22px;font-weight:900;color:var(--hit)}
+.cx-st{margin-top:12px;padding:8px 14px;background:var(--bg);border-left:5px solid #6be6ff;display:grid;gap:2px}.cx-st small{color:var(--sub);font-size:12px}.cx-st .note{margin:0;font-size:13px}
+.cx-bar i.wr u{background:linear-gradient(90deg,#59e08a,#d6ff7a)}

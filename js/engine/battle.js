@@ -39,7 +39,7 @@ export function createBattle({ chars, rng, duration = R.DURATION }) {
       if (over) return;
       const p = P[s], f = P[otherSide(s)];
       p.hits++; p.combo++;
-      const bonus = Math.min(Math.floor(p.combo / (p.c.comboStep ?? R.COMBO_STEP)) * R.COMBO_STEP_BONUS, p.c.comboCap ?? R.COMBO_CAP);
+      const bonus = Math.min(Math.floor(p.combo / (p.c.comboStep ?? R.COMBO_STEP)) * (p.c.comboBonus ?? R.COMBO_STEP_BONUS), p.c.comboCap ?? R.COMBO_CAP);
       const op = pas(p, 'opening'), rg = pas(p, 'rage'), cc = pas(p, 'critCombo'), ls = pas(p, 'lifesteal'), fg = pas(f, 'foeGauge');
       const passiveMul = (op && t < op.sec ? op.v : 1) * (rg && p.hp / p.max <= rg.hp ? rg.v : 1);
       const critRate = clampN(p.c.crit + sum(p, 'critUp') + (cc ? Math.min(Math.floor(p.combo / cc.per) * cc.v, cc.cap) : 0), 0, 1);
@@ -55,8 +55,8 @@ export function createBattle({ chars, rng, duration = R.DURATION }) {
     },
     miss(s) { // ミスタイプ: コンボ切れ+自傷
       if (over) return;
-      const p = P[s], mc = pas(p, 'missCut'), ck = pas(p, 'comboKeep');
-      p.miss++; p.combo = ck ? Math.floor(p.combo * ck.v) : 0;
+      const p = P[s], mc = pas(p, 'missCut'), cl = pas(p, 'comboLoss');
+      p.miss++; p.combo = cl ? Math.max(0, p.combo - cl.n) : 0; // 武闘家はコンボが0に戻らず、決まった数だけ減る
       const self = active(p, 'guard') ? 0 : p.max * R.MISS_SELF_PCT * (mc ? mc.v : 1);
       if (self) hurt(s, self);
       push({ type: 'miss', side: s, self });
