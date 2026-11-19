@@ -312,3 +312,62 @@ input[type=checkbox]{margin-right:8px}
 .rs-ev{margin:0;font-size:22px;font-weight:900;color:var(--hit)}
 .cx-st{margin-top:12px;padding:8px 14px;background:var(--bg);border-left:5px solid #6be6ff;display:grid;gap:2px}.cx-st small{color:var(--sub);font-size:12px}.cx-st .note{margin:0;font-size:13px}
 .cx-bar i.wr u{background:linear-gradient(90deg,#59e08a,#d6ff7a)}
+
+/* ---- スマホ用の入力欄・表示 ---- */
+.mi{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;font-size:16px;z-index:1;background:transparent}
+.typing{position:relative}
+.t-hint{display:none}.imebtn{display:none}.mbtn{display:none}
+.pend{color:var(--sub);border-bottom:2px dotted var(--hit)}
+.dev{display:inline-block;font-size:11px;font-weight:800;padding:0 8px;background:#59e08a;color:#10122e;transform:skewX(-10deg)}
+
+@media (max-width:720px){
+  #app{padding:54px 10px 18px}
+  #app:has(.battle){padding-top:8px;padding-bottom:10px}
+  h1{font-size:24px;margin-bottom:10px}
+  #acct{top:6px;left:8px}.ab{padding:3px 6px 3px 10px;gap:8px}.ab-name small{display:none}.ab .btn{padding:4px 10px;font-size:12px}
+  .am-box{padding:16px}
+  /* メニュー */
+  .hud{gap:8px;margin-bottom:12px}
+  .rk{flex:1 1 100%;min-width:0;padding:8px 12px 8px 8px;gap:8px}
+  .rk-icon{width:84px;height:80px;margin:-6px -8px -6px -4px}
+  .rk-name{font-size:21px}.rk-total{font-size:12px}.rk-total b{font-size:15px}.rk-gauge{height:22px}.rk-gauge span{font-size:11px}
+  .chip{min-width:0;flex:1 1 28%;padding:4px 10px}
+  .menu{gap:12px}.menu-item{padding:12px 16px}.menu-item.is-active{transform:skewX(-8deg) translateX(6px)}
+  .preview{padding:14px 16px}.preview h2{font-size:26px}
+  /* トレーニング・図鑑・称号 */
+  .tr-grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(4,1fr)}.card b{font-size:12px}.card small{display:none}
+  .cx-list{grid-template-columns:repeat(4,1fr)}.cx-thumb{width:100%;height:auto}.cx-item small{display:none}.cx-item b{font-size:12px}.cx-detail{grid-template-columns:1fr}.cx-art{max-width:190px;margin:0 auto}
+  .tt-item{padding:8px 10px}.tt-item b{font-size:16px}
+  /* マッチング・ドラフト・VS・結果 */
+  .mt-found{flex-direction:column;gap:8px}.mt-card,.mt-card.r{min-width:0;width:100%}.mt-msg{font-size:22px}.mt-radar{width:150px;height:150px}.mt-radar b{inset:58px}
+  .dr-head{flex-wrap:wrap;gap:8px}.dr-steps span{padding:3px 10px;font-size:12px}
+  .dr-ring{width:56px;height:56px}.dr-ring b{width:42px;height:42px;font-size:20px}
+  .dr-guide{font-size:16px;margin:8px 0}
+  .dr-grid{grid-template-columns:repeat(4,1fr);gap:6px}.dr-card{padding:4px 2px 6px}.dr-card .dr-art{width:100%;height:auto;aspect-ratio:200/260}.dr-card b{font-size:12px}.dr-card small{display:none}.dr-card i{font-size:9px;padding:0 4px}.dr-card.ban::after{font-size:44px}
+  #app:has(.dr),#app:has(.vs),#app:has(.mt){padding-top:10px}
+  .dr-fmts{grid-template-columns:1fr;gap:8px}.dr-fmt{min-height:62px;font-size:18px}
+  .dr-sub{display:none}
+  .vs-head{font-size:14px;flex-direction:column}
+  .vs-stage{height:190px;grid-template-columns:1fr 56px 1fr}.vs-mid span{font-size:38px}.vs-p svg{max-width:150px}
+  .vs-info{grid-template-columns:1fr;gap:8px}.vs-nm b{font-size:20px}.vs-ico{width:54px;height:56px}
+  .rs h1{font-size:44px}.rs-score{font-size:26px}.rs-ico{width:88px;height:92px}.rs-lp{font-size:20px}
+  .rs-stats{padding:10px 18px}
+  /* バトル */
+  .battle{gap:6px}
+  .mbtn{display:block;position:absolute;right:2px;top:78px;z-index:6;width:38px;height:34px;font:900 18px/1 sans-serif;color:var(--text);background:#0009;border:2px solid var(--line)}
+  .bt-top{grid-template-columns:1fr 64px 1fr;gap:6px}
+  .bt-name{font-size:14px}.bt-name small{display:none}.bt-name em{font-size:11px}.bt-name .pv{font-size:10px;padding:0 5px}
+  .hpbar{height:14px;margin:2px 4px}.hp-num{font-size:11px;margin:0 4px}
+  .bt-timer{font-size:26px;padding:2px 0}.pips{font-size:10px}
+  .stage{height:clamp(120px,24vh,190px);padding:0 1%}
+  .typing{padding:8px 10px 8px;min-height:0}
+  .t-disp{font-size:14px;min-height:1.4em}.t-kana{font-size:clamp(22px,6.5vw,30px);line-height:1.3}.t-rom{font-size:clamp(15px,4.2vw,20px);margin-top:2px}
+  .t-hint{display:block;margin-top:4px;font-size:12px;font-weight:700;color:var(--hit);pointer-events:none}
+  .battle.kb .t-hint{display:none}
+  .imebtn{display:block;position:relative;z-index:2;width:100%;margin-top:6px;font:700 12px/1.7 inherit;color:var(--text);background:var(--bg);border:1px solid var(--line)}
+  .hud-b{grid-template-columns:58px 1fr;gap:8px}.combo{font-size:10px}.combo b{font-size:26px}
+  .skills{gap:6px;margin-top:2px}.skill{min-width:0;flex:1 1 45%;padding:6px 8px}.skill small{display:none}.skill b{font-size:14px}.skill kbd{font-size:10px}
+  .overlay .box{padding:18px 20px}.overlay h2{font-size:30px}
+  .banner{font-size:clamp(44px,16vw,80px)}
+  .cutin{top:76px;height:90px}.ci-art{height:116px}.ci-txt b{font-size:30px}
+}

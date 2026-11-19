@@ -1,7 +1,7 @@
 // 1つの対戦(ドラフト → VS → ラウンド進行 → 結果)。バトルのルールは js/engine/ をそのまま使う(サーバー権威)
 import { createBattle } from '../js/engine/battle.js';
 import { createBot } from '../js/engine/bot.js';
-import { createTyper } from '../js/engine/romaji.js';
+import { createWordInput } from '../js/engine/wordinput.js';
 import { makeQueue } from '../js/engine/feed.js';
 import { mulberry32, shuffled } from '../js/engine/rng.js';
 import { CHARACTERS, charById } from '../js/data/characters.js';
@@ -12,7 +12,8 @@ const IDS = CHARACTERS.map(c => c.id), FMT_IDS = FORMATS.map(f => f.id);
 const SECS = +process.env.TB_DRAFT_SECS || 7;           // BAN/PICKの制限時間
 const COUNT_MS = +process.env.TB_COUNTDOWN_MS || 3000;  // 試合開始前のカウントダウン
 const ROUND_SECS = +process.env.TB_ROUND_SECS || RULES.DURATION;
-const MAX_KEYS_PER_SEC = 16;                            // これを超える打鍵は無視(自動入力対策)
+const MAX_KEYS_PER_SEC = 16;                            // PCの1秒あたりのダメージ回数の上限(自動入力対策)
+const MAX_MSGS_PER_SEC = 80;                            // 1秒あたりのメッセージ数の上限(異常な連打を無視)
 const flip = s => (s === 'p1' ? 'p2' : s === 'p2' ? 'p1' : s);
 const pickState = s => ({ hp: s.hp, max: s.max, combo: s.combo, gauge: s.gauge, fx: s.fx });
 
@@ -23,12 +24,12 @@ export class Match {
     this.fmts = shuffled(FMT_IDS, this.rng).slice(0, 3);
     this.steps = mode === 'ranked' ? ['ban', 'pick', 'format'] : ['pick', 'format'];
     players.forEach((p, i) => {
-      Object.assign(p, { idx: i, left: false, ready: !!p.cpu, sub: null, pick: null, pickRandom: false, kw: [], qi: 0, q: [], typer: null, tot: { hits: 0, miss: 0, t: 0, maxCombo: 0, skills: new Set(), minHp: 1 } });
+      Object.assign(p, { idx: i, left: false, ready: !!p.cpu, sub: null, pick: null, pickRandom: false, kw: [], qi: 0, q: [], wi: null, tot: { hits: 0, miss: 0, t: 0, maxCombo: 0, skills: new Set(), minHp: 1 } });
     });
     this.sendAll(i => ({ t: 'found', mode, firstTo, opp: this.info(players[1 - i]) }));
     this.later(() => this.nextStep(), 1700);
   }
-  info = p => ({ ign: p.ign, rank: p.rankText, title: p.title });
+  info = p => ({ ign: p.ign, rank: p.rankText, title: p.title, mobile: !!p.mobile });
   later(fn, ms) { const t = setTimeout(() => { this.timers.delete(t); fn(); }, ms); this.timers.add(t); return t; }
   clearTimers() { this.timers.forEach(clearTimeout); this.timers.clear(); clearInterval(this.tickTimer); }
   send(p, obj) { if (p.ws && !p.cpu && !p.left) p.ws.send(JSON.stringify(obj)); }
@@ -95,7 +96,7 @@ export class Match {
       this.tickTimer = setInterval(() => this.tick(), 50);
     }, COUNT_MS);
   }
-  newWord(p) { const w = p.q[p.qi % p.q.length]; p.typer = createTyper(w.r, !!w.lit); }
+  newWord(p) { p.wi = createWordInput(p.q[p.qi % p.q.length]); }
   tick() {
     const now = performance.now(), dt = Math.min(0.1, (now - this.last) / 1000); this.last = now;
     this.bot?.step(dt, this.battle, 'p2');
@@ -134,6 +135,7 @@ export class Match {
   onMsg(p, m) {
     if (this.finished) return;
     const ph = this.phase;
+    if (m.t === 'device') { if (m.d === 'pc') p.mobile = false; return; } // 外付けキーボードを使い始めたら、スマホ扱いをやめる(PC→スマホへの切り替えは受け付けない)
     if (m.t === 'ban' && ph === 'ban' && !p.sub && Array.isArray(m.ids) && m.ids.length === 2 && m.ids[0] !== m.ids[1] && m.ids.every(x => IDS.includes(x))) p.sub = m.ids;
     else if (m.t === 'pick' && ph === 'pick' && !p.sub && this.avail.includes(m.id)) p.sub = [m.id];
     else if (m.t === 'fmt' && ph === 'format' && !p.sub && this.fmts.includes(m.id)) p.sub = [m.id];
@@ -144,15 +146,23 @@ export class Match {
   }
   onBattleMsg(p, m) {
     const side = p.idx === 0 ? 'p1' : 'p2';
-    if (m.t === 'key' && typeof m.c === 'string' && /^[a-z0-9-]$/.test(m.c)) {
-      const now = Date.now();
+    const kind = m.t === 'key' && typeof m.c === 'string' && /^[a-z0-9-]$/.test(m.c) ? 'r' : m.t === 'kc' && typeof m.c === 'string' && /^[ぁ-ゖァ-ヶー]$/.test(m.c) ? 'k' : null;
+    if (kind) {
+      const now = Date.now(), cap = p.mobile ? RULES.MOBILE_MAX_KEYS : MAX_KEYS_PER_SEC;
+      p.mw = (p.mw ?? []).filter(t => now - t < 1000);
+      if (p.mw.length >= MAX_MSGS_PER_SEC) return;   // 異常な数のメッセージは無視(通常のプレイでは起きない)
+      p.mw.push(now);
       p.kw = p.kw.filter(t => now - t < 1000);
-      if (p.kw.length >= MAX_KEYS_PER_SEC) return;
-      p.kw.push(now);
-      const r = p.typer.press(m.c);
-      if (r === 'miss') this.battle.miss(side);
-      else { this.battle.hit(side); if (r === 'done') { p.qi++; this.newWord(p); } }
+      const mult = p.mobile ? RULES.MOBILE_MULT : 1;
+      for (const r of p.wi.press(kind, m.c, !!m.r)) { // 入力の判定は必ず進める(ずれを防ぐ)。ダメージの回数だけを上限で抑える
+        if (r === 'miss') this.battle.miss(side);
+        else if (r === 'ok' || r === 'done') {
+          if (p.kw.length < cap) { p.kw.push(now); this.battle.hit(side, mult); }
+          if (r === 'done') { p.qi++; this.newWord(p); }
+        }
+      }
     } else if (m.t === 'skill' && (m.i === 0 || m.i === 1)) this.battle.skill(side, m.i);
+    else if (m.t === 'reset') this.newWord(p); // 入力方式の切り替え: この単語を最初から
     else if (m.t === 'surrender') { this.battle.surrender(side); this.flush(); this.endRound(this.battle.result()); }
   }
 

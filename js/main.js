@@ -3,6 +3,7 @@ import { restoreSession } from './core/auth.js';
 import { mountAccountBar } from './core/account_ui.js';
 import { conn } from './net/conn.js';
 import { initAudio } from './core/audio.js';
+import { isMobile } from './core/device.js';
 import { registerScreens, startRouter } from './core/router.js';
 import menu from './screens/menu.js';
 import settings from './screens/settings.js';
@@ -19,5 +20,6 @@ registerScreens({ menu, settings, training, battle, matching, draft, vs, result,
 applySettings(store.get().settings);
 mountAccountBar(document.getElementById('acct'));
 startRouter(document.getElementById('app'), 'menu');
+document.documentElement.classList.toggle('is-mobile', isMobile());
 initAudio();
 restoreSession().then(u => { if (u) applyUser(u); }).finally(() => conn.connect());

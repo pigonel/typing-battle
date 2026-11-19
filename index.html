@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>タイピングバトル</title>
 <style>
 :root{--bg:#1b1f4b;--glow:#3a3f9a;--panel:#262b66;--line:#4a52a8;--text:#f4f1ff;--sub:#aab0e6;--hit:#ffd23f;--hit-ink:#1b1f4b;--warn:#ff8a7a;color-scheme:dark}
@@ -319,6 +319,65 @@ input[type=checkbox]{margin-right:8px}
 .rs-ev{margin:0;font-size:22px;font-weight:900;color:var(--hit)}
 .cx-st{margin-top:12px;padding:8px 14px;background:var(--bg);border-left:5px solid #6be6ff;display:grid;gap:2px}.cx-st small{color:var(--sub);font-size:12px}.cx-st .note{margin:0;font-size:13px}
 .cx-bar i.wr u{background:linear-gradient(90deg,#59e08a,#d6ff7a)}
+
+/* ---- スマホ用の入力欄・表示 ---- */
+.mi{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;font-size:16px;z-index:1;background:transparent}
+.typing{position:relative}
+.t-hint{display:none}.imebtn{display:none}.mbtn{display:none}
+.pend{color:var(--sub);border-bottom:2px dotted var(--hit)}
+.dev{display:inline-block;font-size:11px;font-weight:800;padding:0 8px;background:#59e08a;color:#10122e;transform:skewX(-10deg)}
+
+@media (max-width:720px){
+  #app{padding:54px 10px 18px}
+  #app:has(.battle){padding-top:8px;padding-bottom:10px}
+  h1{font-size:24px;margin-bottom:10px}
+  #acct{top:6px;left:8px}.ab{padding:3px 6px 3px 10px;gap:8px}.ab-name small{display:none}.ab .btn{padding:4px 10px;font-size:12px}
+  .am-box{padding:16px}
+  /* メニュー */
+  .hud{gap:8px;margin-bottom:12px}
+  .rk{flex:1 1 100%;min-width:0;padding:8px 12px 8px 8px;gap:8px}
+  .rk-icon{width:84px;height:80px;margin:-6px -8px -6px -4px}
+  .rk-name{font-size:21px}.rk-total{font-size:12px}.rk-total b{font-size:15px}.rk-gauge{height:22px}.rk-gauge span{font-size:11px}
+  .chip{min-width:0;flex:1 1 28%;padding:4px 10px}
+  .menu{gap:12px}.menu-item{padding:12px 16px}.menu-item.is-active{transform:skewX(-8deg) translateX(6px)}
+  .preview{padding:14px 16px}.preview h2{font-size:26px}
+  /* トレーニング・図鑑・称号 */
+  .tr-grid{grid-template-columns:1fr}.cards{grid-template-columns:repeat(4,1fr)}.card b{font-size:12px}.card small{display:none}
+  .cx-list{grid-template-columns:repeat(4,1fr)}.cx-thumb{width:100%;height:auto}.cx-item small{display:none}.cx-item b{font-size:12px}.cx-detail{grid-template-columns:1fr}.cx-art{max-width:190px;margin:0 auto}
+  .tt-item{padding:8px 10px}.tt-item b{font-size:16px}
+  /* マッチング・ドラフト・VS・結果 */
+  .mt-found{flex-direction:column;gap:8px}.mt-card,.mt-card.r{min-width:0;width:100%}.mt-msg{font-size:22px}.mt-radar{width:150px;height:150px}.mt-radar b{inset:58px}
+  .dr-head{flex-wrap:wrap;gap:8px}.dr-steps span{padding:3px 10px;font-size:12px}
+  .dr-ring{width:56px;height:56px}.dr-ring b{width:42px;height:42px;font-size:20px}
+  .dr-guide{font-size:16px;margin:8px 0}
+  .dr-grid{grid-template-columns:repeat(4,1fr);gap:6px}.dr-card{padding:4px 2px 6px}.dr-card .dr-art{width:100%;height:auto;aspect-ratio:200/260}.dr-card b{font-size:12px}.dr-card small{display:none}.dr-card i{font-size:9px;padding:0 4px}.dr-card.ban::after{font-size:44px}
+  #app:has(.dr),#app:has(.vs),#app:has(.mt){padding-top:10px}
+  .dr-fmts{grid-template-columns:1fr;gap:8px}.dr-fmt{min-height:62px;font-size:18px}
+  .dr-sub{display:none}
+  .vs-head{font-size:14px;flex-direction:column}
+  .vs-stage{height:190px;grid-template-columns:1fr 56px 1fr}.vs-mid span{font-size:38px}.vs-p svg{max-width:150px}
+  .vs-info{grid-template-columns:1fr;gap:8px}.vs-nm b{font-size:20px}.vs-ico{width:54px;height:56px}
+  .rs h1{font-size:44px}.rs-score{font-size:26px}.rs-ico{width:88px;height:92px}.rs-lp{font-size:20px}
+  .rs-stats{padding:10px 18px}
+  /* バトル */
+  .battle{gap:6px}
+  .mbtn{display:block;position:absolute;right:2px;top:78px;z-index:6;width:38px;height:34px;font:900 18px/1 sans-serif;color:var(--text);background:#0009;border:2px solid var(--line)}
+  .bt-top{grid-template-columns:1fr 64px 1fr;gap:6px}
+  .bt-name{font-size:14px}.bt-name small{display:none}.bt-name em{font-size:11px}.bt-name .pv{font-size:10px;padding:0 5px}
+  .hpbar{height:14px;margin:2px 4px}.hp-num{font-size:11px;margin:0 4px}
+  .bt-timer{font-size:26px;padding:2px 0}.pips{font-size:10px}
+  .stage{height:clamp(120px,24vh,190px);padding:0 1%}
+  .typing{padding:8px 10px 8px;min-height:0}
+  .t-disp{font-size:14px;min-height:1.4em}.t-kana{font-size:clamp(22px,6.5vw,30px);line-height:1.3}.t-rom{font-size:clamp(15px,4.2vw,20px);margin-top:2px}
+  .t-hint{display:block;margin-top:4px;font-size:12px;font-weight:700;color:var(--hit);pointer-events:none}
+  .battle.kb .t-hint{display:none}
+  .imebtn{display:block;position:relative;z-index:2;width:100%;margin-top:6px;font:700 12px/1.7 inherit;color:var(--text);background:var(--bg);border:1px solid var(--line)}
+  .hud-b{grid-template-columns:58px 1fr;gap:8px}.combo{font-size:10px}.combo b{font-size:26px}
+  .skills{gap:6px;margin-top:2px}.skill{min-width:0;flex:1 1 45%;padding:6px 8px}.skill small{display:none}.skill b{font-size:14px}.skill kbd{font-size:10px}
+  .overlay .box{padding:18px 20px}.overlay h2{font-size:30px}
+  .banner{font-size:clamp(44px,16vw,80px)}
+  .cutin{top:76px;height:90px}.ci-art{height:116px}.ci-txt b{font-size:30px}
+}
 </style>
 </head>
 <body>
@@ -483,6 +542,11 @@ function go(id, params = {}) {
 
 function startRouter(el, first = 'menu') { root = el; go(first); }
 
+// ---- js/core/device.js
+// スマホ(タッチ操作が主)かどうか。URLに ?mobile=1 を付けると、PCでもスマホ扱いにできる(確認用)
+const q = s => matchMedia(s).matches;
+const isMobile = () => new URLSearchParams(location.search).has('mobile') || (q('(any-pointer: coarse)') && !q('(any-pointer: fine)'));
+
 // ---- js/core/auth.js
 // アカウント(メール+パスワード)。サーバーのAPIを呼ぶ。Gmailなど任意のメールアドレスで登録できる
 const IGN_RE = /^[A-Za-z0-9_.-]{3,16}$/;
@@ -526,6 +590,7 @@ const restoreSession = () => Auth.restore();
 // サーバーとの通信(WebSocket)。ファイルを直接開いている場合(サーバーなし)は接続しない
 
 
+
 const LISTENERS = new Map();
 const LAST = {}; // 種類ごとの最新メッセージ(画面の切り替え中に届いたものを拾うため)
 let sock = null, retry = 0, wanted = false, seqNo = 0, retryTimer = 0;
@@ -546,7 +611,7 @@ const conn = {
     s.onopen = () => {
       retry = 0;
       let token = null; try { token = localStorage.getItem('tb.token'); } catch { /* 無視 */ }
-      s.send(JSON.stringify({ t: 'hello', token, guest: store.get().session.ign }));
+      s.send(JSON.stringify({ t: 'hello', token, guest: store.get().session.ign, device: isMobile() ? 'mobile' : 'pc' }));
     };
     s.onmessage = ev => {
       let m; try { m = JSON.parse(ev.data); } catch { return; }
@@ -754,6 +819,8 @@ const RULES = {
   COMBO_CAP: 0.30,       // コンボによるダメージ増加の上限
   MISS_SELF_PCT: 0.015,  // ミス時の自傷(最大HPの割合。旧3%→1.5%)
   DEF_CAP: 0.8,          // 防御カット率の上限
+  MOBILE_MULT: 1.5,      // スマホ入力は打つ速度が遅いので、1文字(ローマ字1打鍵・かな1文字)のダメージを1.5倍
+  MOBILE_MAX_KEYS: 8,    // スマホ入力の1秒あたりの入力上限(自動入力・なりすまし対策)
 };
 
 // ---- js/engine/rng.js
@@ -894,6 +961,65 @@ function createTyper(reading, literal = false) {
   };
 }
 
+// ---- js/engine/kana.js
+// かな入力(スマホのフリック入力など)の判定。サーバーとブラウザで同じコードを使う
+// 濁点・小文字・「っ」は、キーを押し直して変わる(か→が、や→ゃ)ので、変わる前の文字を打った段階は「途中」として扱う
+const kanaHira = s => s.replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+const CYCLES = ['かが', 'きぎ', 'くぐ', 'けげ', 'こご', 'さざ', 'しじ', 'すず', 'せぜ', 'そぞ', 'ただ', 'ちぢ', 'つっづ', 'てで', 'とど',
+  'はばぱ', 'ひびぴ', 'ふぶぷ', 'へべぺ', 'ほぼぽ', 'やゃ', 'ゆゅ', 'よょ', 'あぁ', 'いぃ', 'うぅゔ', 'えぇ', 'おぉ', 'わゎ'];
+const LEAD = {}; // 目的の文字 → 途中で許す文字
+for (const c of CYCLES) for (const t of c) LEAD[t] = [...c].filter(x => x !== t).join('');
+
+const isKana = ch => /^[ぁ-ゖァ-ヶー]$/.test(ch);
+
+function createKanaTyper(reading) {
+  const target = kanaHira(reading).replace(/[\s、。,.]/g, '');
+  let i = 0, pending = '';
+  return {
+    // 戻り値: 結果の配列 'ok'(1文字正解) / 'done'(語を打ち終えた) / 'pending'(変換の途中) / 'miss'
+    // replace=true: 直前に打った文字が、濁点などで別の文字に置き換わった
+    press(ch, replace = false) {
+      ch = kanaHira(ch);
+      if (i >= target.length) return ['done'];
+      const want = target[i], out = [];
+      if (!replace && pending) { out.push('miss'); pending = ''; } // 変換されないまま次を打った
+      if (replace && !pending) return ['miss'];
+      if (ch === want) { i++; pending = ''; out.push(i >= target.length ? 'done' : 'ok'); }
+      else if ((LEAD[want] ?? '').includes(ch)) { pending = ch; out.push('pending'); }
+      else { pending = ''; out.push('miss'); }
+      return out;
+    },
+    isDone: () => i >= target.length,
+    view: () => ({ typed: target.slice(0, i), rest: target.slice(i), pending }),
+  };
+}
+
+// ---- js/engine/wordinput.js
+// 1つの単語の入力(ローマ字 / かな)。最初に正しく打てた方式に固定され、途中で切り替えるとミスになる
+
+
+
+function createWordInput(word) {
+  const romaji = createTyper(word.r, !!word.lit), kana = word.lit ? null : createKanaTyper(word.r);
+  let mode = null;
+  return {
+    // kind: 'r'=ローマ字 / 'k'=かな。戻り値は結果の配列('ok' / 'done' / 'pending' / 'miss')
+    press(kind, ch, replace = false) {
+      if (kind === 'k' && !kana) return []; // 英単語にかな入力はない
+      if (mode && mode !== kind) return ['miss'];
+      const res = kind === 'r' ? [romaji.press(ch)] : kana.press(ch, replace);
+      if (!mode && res.some(x => x === 'ok' || x === 'done')) mode = kind;
+      return res;
+    },
+    get mode() { return mode; },
+    // 画面表示用: かなの進み具合と、ローマ字の残り
+    view() {
+      if (mode === 'k') { const v = kana.view(); return { kanaDone: v.typed, kanaRest: v.rest, typed: '', rest: '', pending: v.pending }; }
+      return { ...romaji.view(), pending: '' };
+    },
+  };
+}
+
 // ---- js/engine/battle.js
 // 1ラウンドの進行(UI非依存)。時間は step(dt) で進め、入力は hit / miss / skill で渡す。
 // サーバー権威にする場合も、このファイルをそのままサーバー側で動かせる。
@@ -932,7 +1058,7 @@ function createBattle({ chars, rng, duration = R.DURATION }) {
   };
 
   return {
-    hit(s) { // 正しい1打鍵
+    hit(s, mult = 1) { // 正しい1打鍵(mult: スマホ入力のダメージ倍率など)
       if (over) return;
       const p = P[s], f = P[otherSide(s)];
       p.hits++; p.combo++;
@@ -943,7 +1069,7 @@ function createBattle({ chars, rng, duration = R.DURATION }) {
       const crit = rng() < critRate;
       const wd = pas(f, 'ward');
       const cut = clampN(f.c.def + sum(f, 'shield') + (wd ? wd.v : 0), 0, R.DEF_CAP);
-      const dmg = p.c.atk * (1 + bonus) * (crit ? p.c.critMul : 1) * prod(p, 'dmg') * prod(p, 'atkDown') * passiveMul * (1 - cut);
+      const dmg = p.c.atk * (1 + bonus) * (crit ? p.c.critMul : 1) * prod(p, 'dmg') * prod(p, 'atkDown') * passiveMul * (1 - cut) * mult;
       p.gauge = Math.min(R.GAUGE_MAX, p.gauge + R.GAUGE_PER_HIT * (1 + Math.min(p.combo, R.COMBO_GAUGE_FULL) / R.COMBO_GAUGE_FULL) * prod(p, 'gaugeMul') * (fg ? fg.v : 1));
       hurt(otherSide(s), dmg);
       if (ls) p.hp = Math.min(p.max, p.hp + dmg * ls.v);
@@ -1854,6 +1980,7 @@ const menuScreen = {
 
 
 
+
 const HUD = [['ign', 'プレイヤー名'], ['rank', 'ランクとLP'], ['title', '装備中の称号'], ['streak', '連勝数']];
 const MODS = ['ShiftLeft', 'ShiftRight', 'AltLeft', 'AltRight', 'ControlLeft', 'ControlRight', 'MetaLeft', 'MetaRight'];
 const fmt = c => c.split('+').map(p => p.replace(/^(Key|Digit)/, '')).join(' + ');
@@ -1873,9 +2000,9 @@ const settingsScreen = {
         <label class="field"><span>テーマ</span><select id="theme"><option value="dark">ダーク</option><option value="light">ライト</option></select></label>
         <fieldset class="field"><legend>メニュー上部に表示する項目</legend>${HUD.map(([k, t]) =>
           `<label><input type="checkbox" data-hud="${k}" ${s.hud[k] ? 'checked' : ''}>${t}</label>`).join('')}</fieldset>
-        <div class="field"><span>スキルキー</span>
+        ${isMobile() ? '<p class="note">スキルは、画面下のスキルボタンをタップして使います。</p>' : `<div class="field"><span>スキルキー</span>
           <div class="row">${[0, 1].map(i => `<button class="btn" data-key="${i}"></button>`).join('')}</div>
-          <small id="key-msg">ボタンを押してから、Shift または Alt と組み合わせたキーを押します</small></div>
+          <small id="key-msg">ボタンを押してから、Shift または Alt と組み合わせたキーを押します</small></div>`}
       </div>
       <div class="row"><button class="btn primary" id="back">メニューへ戻る</button></div>`;
     const $ = q => el.querySelector(q);
@@ -2021,6 +2148,8 @@ const trainingScreen = {
 
 
 
+
+
 // training画面から cfg を受け取る。cfg なし(マッチング経由の仮接続)のときは既定のCPU戦。
 const BATTLE_DEFAULT = { me: 'thief', foe: 'golem', format: 'daily', cpm: 250, acc: 95, skill: 'ready', limit: 60, dummy: false, firstTo: 1, kind: 'training' };
 const keyToChar = code => (/^Key[A-Z]$/.test(code) ? code[3].toLowerCase() : code === 'Minus' ? '-' : null);
@@ -2033,17 +2162,19 @@ const battleScreen = {
     const fromTraining = cfg.kind === 'training', online = cfg.kind === 'online';
     const me = charById(cfg.me), foe = charById(cfg.foe);
     const skillKeys = store.get().settings.skillKeys;
-    const skillBox = (c, mine) => c.skills.map((s, i) => `<div class="skill" data-sk="${i}"><kbd>${mine ? keyLabel(skillKeys[i]) : ''}</kbd><b>${s.name}</b><small>${s.desc}</small></div>`).join('');
+    let mobile = isMobile(); // スマホ入力: 1文字のダメージが1.5倍(ローマ字1打鍵・かな1文字)
+    const skillBox = (c, mine) => c.skills.map((s, i) => `<div class="skill" data-sk="${i}"><kbd>${mine ? (mobile ? 'タップ' : keyLabel(skillKeys[i])) : ''}</kbd><b>${s.name}</b><small>${s.desc}</small></div>`).join('');
 
     el.innerHTML = `
       <div class="battle">
+        ${mobile ? '<button class="mbtn" data-a="mmenu" type="button" aria-label="メニュー">☰</button>' : ''}
         <div class="bt-top">
           <div class="bt-side"><div class="bt-name">${me.name}<small>${me.role}</small>${cfg.meIgn ? `<em>${esc(cfg.meIgn)}</em>` : ''}<span class="pv" title="${esc(me.passive.desc)}">${me.passive.name}</span></div><div class="hpbar"><i class="hp-ghost"></i><i class="hp-fill"></i></div><div class="hp-num"></div></div>
           <div class="bt-timer"><span id="clock">60</span><small>秒</small><div class="pips" id="pips"></div></div>
           <div class="bt-side right"><div class="bt-name">${foe.name}<small>${foe.role}</small>${cfg.foeIgn ? `<em>${esc(cfg.foeIgn)}</em>` : ''}<span class="pv" title="${esc(foe.passive.desc)}">${foe.passive.name}</span></div><div class="hpbar"><i class="hp-ghost"></i><i class="hp-fill"></i></div><div class="hp-num"></div><div class="mini-gauge"><i id="g2"></i></div></div>
         </div>
         <div class="stage"><div class="fighter l"><div class="aura"></div><div class="idle">${charArt(me)}</div></div><div class="fighter r"><div class="aura"></div><div class="idle">${charArt(foe)}</div></div><div class="fxl"></div><div class="flash"></div><div class="banner"></div></div>
-        <div class="typing"><div class="t-disp"></div><div class="t-kana"></div><div class="t-rom"></div></div>
+        <div class="typing"><div class="t-disp"></div><div class="t-kana"></div><div class="t-rom"></div>${mobile ? `<input id="mi" class="mi" type="text" inputmode="text" lang="ja" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" aria-label="ここに入力"><div class="t-hint">ここをタップして入力(1文字のダメージ${RULES.MOBILE_MULT}倍)</div><button class="imebtn" data-a="ime" type="button"></button>` : ''}</div>
         <div class="hud-b">
           <div class="combo"><b id="combo">0</b>コンボ</div>
           <div><div class="gauge"><div class="g-fill" id="g1"></div>${me.skills.map(sk => `<i class="tick" style="left:${(sk.cost / 300) * 100}%"></i>`).join('')}</div></div>
@@ -2058,7 +2189,9 @@ const battleScreen = {
     stage.style.setProperty('--me', ACCENT[me.id]); stage.style.setProperty('--foe', ACCENT[foe.id]);
     const fx = createFx({ arena: root, stage, fighters, chars: { p1: me, p2: foe }, banner, chips: $$('.pv'), on: store.get().settings.fx });
 
-    let battle, bot, typer, word, queue, qi, phase = 'count', last = 0, raf = 0, timers = [], stats, score = [0, 0], round = 1, tot, forfeit = false, summary = null, menuOpen = false, matchOver = false, lastHurt = 0;
+    let battle, bot, wi, word, queue, qi, phase = 'count', last = 0, raf = 0, timers = [], stats, score = [0, 0], round = 1, tot, forfeit = false, summary = null, menuOpen = false, matchOver = false, lastHurt = 0;
+    let imeMode = 'kana', prevIn = '', mi = null; // 入力方式: kana(日本語キーボード) / roman(英字キーボード)
+    try { if (localStorage.getItem('tb.ime') === 'roman') imeMode = 'roman'; } catch { /* 無視 */ }
     const later = (fn, ms) => timers.push(setTimeout(fn, ms));
     const remote = {
       snap: null, evq: [],
@@ -2073,11 +2206,11 @@ const battleScreen = {
       surrender() { conn.send({ t: 'surrender' }); },
     };
 
-    const nextWord = () => { word = queue[qi++ % queue.length]; typer = createTyper(word.r, !!word.lit); paintWord(); };
+    const nextWord = () => { word = queue[qi++ % queue.length]; wi = createWordInput(word); if (mi) { mi.value = ''; prevIn = ''; } paintWord(); };
     const paintWord = () => {
-      const v = typer.view();
+      const v = wi.view();
       $('.t-disp').textContent = word.t !== word.r ? word.t : '';
-      $('.t-kana').innerHTML = `<span class="done">${esc(v.kanaDone)}</span>${esc(v.kanaRest)}`;
+      $('.t-kana').innerHTML = `<span class="done">${esc(v.kanaDone)}</span>${v.pending ? `<span class="pend">${esc(v.pending)}</span>` : ''}${esc(v.kanaRest)}`;
       $('.t-rom').innerHTML = `<span class="done">${esc(v.typed)}</span><span class="rest"><u>${esc(v.rest[0] ?? '')}</u>${esc(v.rest.slice(1))}</span>`;
     };
 
@@ -2241,12 +2374,64 @@ const battleScreen = {
       if (sk >= 0) { e.preventDefault(); battle.skill('p1', sk); return; }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const ch = keyToChar(e.code); if (!ch) return;
+      if (mobile && /^Key[A-Z]$/.test(e.code) && !e.isComposing && e.keyCode !== 229) { // 外付けキーボードで打っている → スマホ扱いをやめる
+        mobile = false; mi?.remove(); mi = null; if (online) conn.send({ t: 'device', d: 'pc' });
+        root.classList.add('hwkb'); $$('.skill kbd').forEach((k, i) => { k.textContent = keyLabel(skillKeys[i]); });
+      }
       e.preventDefault();
-      const r = typer.press(ch);
-      if (online) conn.send({ t: 'key', c: ch });
-      if (r === 'miss') { if (!online) battle.miss('p1'); sfx('miss'); }
-      else { if (!online) battle.hit('p1'); sfx('key'); if (r === 'done') nextWord(); else paintWord(); }
+      feed('r', ch);
     };
+
+    // 1文字の入力(kind: 'r'=ローマ字 / 'k'=かな)。サーバー対戦では、同じ内容をサーバーへ送って判定してもらう
+    const feed = (kind, ch, replace = false) => {
+      if (!wi || phase !== 'fight' || menuOpen) return;
+      if (online) conn.send(kind === 'r' ? { t: 'key', c: ch } : { t: 'kc', c: ch, r: replace ? 1 : 0 });
+      for (const r of wi.press(kind, ch, replace)) {
+        if (r === 'miss') { if (!online) battle.miss('p1'); sfx('miss'); }
+        else if (r === 'ok' || r === 'done') { if (!online) battle.hit('p1', mobile ? RULES.MOBILE_MULT : 1); sfx('key'); if (r === 'done') { nextWord(); return; } }
+      }
+      paintWord();
+    };
+
+    // スマホ: 入力欄(画面下のタップ領域)の内容の変化から、打った文字を読み取る
+    const toHira = t => t.replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+    const onInput = () => {
+      const cur = toHira(mi.value.replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))).replace(/\s+/g, '');
+      if (phase !== 'fight' || menuOpen) { mi.value = ''; prevIn = ''; return; }
+      let k = 0; while (k < prevIn.length && k < cur.length && prevIn[k] === cur[k]) k++;
+      const removed = prevIn.slice(k), added = cur.slice(k);
+      prevIn = cur;
+      if (!added) return; // 削除など
+      const isK = c => /[ぁ-ゖー]/.test(c);
+      if (imeMode === 'roman') { if (!removed) for (const c of added) if (/[a-z-]/i.test(c)) feed('r', c.toLowerCase()); return; }
+      // かな: 濁点などで直前の1文字が置き換わった場合は replace。ローマ字かな変換(k→か)で英字が仮に出たあとは、かなになった時点で1文字と数える
+      const replace = removed.length > 0 && isK(removed.slice(-1)) && added.length === 1 && isK(added);
+      for (const c of added) if (isK(c)) feed('k', c, replace);
+    };
+    const setIme = mode => {
+      const changed = imeMode !== mode;
+      imeMode = mode; try { localStorage.setItem('tb.ime', mode); } catch { /* 無視 */ }
+      if (changed && wi && word) { wi = createWordInput(word); if (online) conn.send({ t: 'reset' }); paintWord(); } // 入力方式を変えたら、この単語を打ち直す
+      const btn = $('.imebtn'); if (btn) btn.textContent = mode === 'kana' ? '入力: かな(日本語キーボード)' : '入力: ローマ字(英字キーボード)';
+      if (mi) { mi.value = ''; prevIn = ''; mi.setAttribute('inputmode', mode === 'kana' ? 'text' : 'email'); mi.setAttribute('lang', mode === 'kana' ? 'ja' : 'en'); if (document.activeElement === mi) { mi.blur(); mi.focus(); } }
+    };
+    mi = $('#mi');
+    if (mi) {
+      mi.addEventListener('input', onInput);
+      mi.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+      mi.addEventListener('focus', () => root.classList.add('kb')); mi.addEventListener('blur', () => root.classList.remove('kb'));
+      el.addEventListener('pointerdown', e => { if (e.target.closest('.skill, .mbtn, .imebtn')) e.preventDefault(); }); // キーボードを閉じない
+      setIme(imeMode);
+    }
+    el.addEventListener('click', e => {
+      const a = e.target.closest('[data-a]')?.dataset.a;
+      if (a === 'ime') setIme(imeMode === 'kana' ? 'roman' : 'kana');
+      else if (a === 'mmenu') { if (online) { if (!matchOver && phase !== 'over') onlineMenu(); } else if (phase === 'fight') pauseMenu(); else if (phase === 'pause') resume(); }
+    });
+    el.addEventListener('pointerdown', e => { // スキルはタップで発動(スマホ)
+      const sk = e.target.closest('.skill'); if (!sk || phase !== 'fight' || menuOpen) return;
+      battle.skill('p1', +sk.dataset.sk);
+    });
 
     const frame = now => {
       raf = requestAnimationFrame(frame);
@@ -2282,6 +2467,7 @@ const battleScreen = {
 
 
 
+
 const matchingScreen = {
   mount(el, { store, go }) {
     const st = store.get(), mode = st.mode === 'ranked' ? 'ranked' : 'normal', ranked = mode === 'ranked';
@@ -2310,7 +2496,7 @@ const matchingScreen = {
       conn.on('error', m => { clearInterval(tick); $('.mt-msg').textContent = m.msg ?? 'エラーが発生しました'; $('.mt-radar').hidden = true; $('#cancel').textContent = 'メニューへ戻る'; }),
       conn.on('_close', () => { if (!done) { clearInterval(tick); $('.mt-msg').textContent = 'サーバーとの接続が切れました'; $('#cancel').textContent = 'メニューへ戻る'; } }),
     ];
-    conn.send({ t: 'queue', mode });
+    conn.send({ t: 'queue', mode, device: isMobile() ? 'mobile' : 'pc' });
     const cancel = () => { if (!done) { conn.send({ t: 'cancel' }); go('menu'); } };
     el.addEventListener('click', e => { if (e.target.id === 'cancel') cancel(); });
     const onKey = e => { if (e.key === 'Escape') cancel(); };
@@ -2414,16 +2600,17 @@ const draftScreen = {
 
 
 
+
 const vsScreen = {
   mount(el, { store, go }) {
     const st = store.get(), v = st.match?.vs;
     if (!v) { go('menu'); return; }
     const me = charById(v.me.char), foe = charById(v.foe.char), ranked = v.mode === 'ranked';
-    const info = (c, ign, rank, title, side) => `<div class="vs-nm ${side}"><span class="vs-ico">${rankIcon(parseRank(rank), 'vs' + side)}</span><div><small>${esc(title ?? '称号なし')}</small><b>${esc(ign)}</b><em>${esc(rank)}</em><span>${c.name}(${c.role})</span></div></div>`;
+    const info = (c, ign, rank, title, side, mobile) => `<div class="vs-nm ${side}"><span class="vs-ico">${rankIcon(parseRank(rank), 'vs' + side)}</span><div><small>${esc(title ?? '称号なし')}</small><b>${esc(ign)}</b><em>${esc(rank)}</em><span>${c.name}(${c.role})</span>${mobile ? '<b class="dev">スマホ入力(ダメージ1.5倍)</b>' : ''}</div></div>`;
     el.innerHTML = `<div class="vs">
       <div class="vs-head">${ranked ? 'ランクマッチ・2先取' : '通常マッチ・1本勝負'}<span>単語形式: ${esc(FORMATS.find(f => f.id === v.format)?.name ?? '')}</span></div>
       <div class="vs-stage"><div class="vs-p l">${charArt(me)}</div><div class="vs-mid"><span>VS</span></div><div class="vs-p r">${charArt(foe)}</div></div>
-      <div class="vs-info">${info(me, st.session.ign, st.session.guest ? 'ゲスト' : st.profile.name, titleName(equippedTitle(st)), 'l')}${info(foe, v.foe.ign, v.foe.rank, v.foe.title, 'r')}</div>
+      <div class="vs-info">${info(me, st.session.ign, st.session.guest ? 'ゲスト' : st.profile.name, titleName(equippedTitle(st)), 'l', isMobile())}${info(foe, v.foe.ign, v.foe.rank, v.foe.title, 'r', v.foe.mobile)}</div>
       <p class="vs-hint">Enter / クリックで準備完了(相手も準備できたらすぐ開始します)</p></div>`;
     sfx('vs');
     const ready = () => { conn.send({ t: 'ready' }); el.querySelector('.vs-hint').textContent = '準備完了。相手を待っています…'; };
@@ -2585,10 +2772,12 @@ const titlesScreen = {
 
 
 
+
 registerScreens({ menu: menuScreen, settings: settingsScreen, training: trainingScreen, battle: battleScreen, matching: matchingScreen, draft: draftScreen, vs: vsScreen, result: resultScreen, codex: codexScreen, titles: titlesScreen });
 applySettings(store.get().settings);
 mountAccountBar(document.getElementById('acct'));
 startRouter(document.getElementById('app'), 'menu');
+document.documentElement.classList.toggle('is-mobile', isMobile());
 initAudio();
 restoreSession().then(u => { if (u) applyUser(u); }).finally(() => conn.connect());
 

@@ -1,5 +1,6 @@
 import { saveSettings, applyProfile } from '../core/state.js';
 import { Auth } from '../core/auth.js';
+import { isMobile } from '../core/device.js';
 import { esc } from '../core/dom.js';
 import { sfx } from '../core/audio.js';
 
@@ -22,9 +23,9 @@ export default {
         <label class="field"><span>テーマ</span><select id="theme"><option value="dark">ダーク</option><option value="light">ライト</option></select></label>
         <fieldset class="field"><legend>メニュー上部に表示する項目</legend>${HUD.map(([k, t]) =>
           `<label><input type="checkbox" data-hud="${k}" ${s.hud[k] ? 'checked' : ''}>${t}</label>`).join('')}</fieldset>
-        <div class="field"><span>スキルキー</span>
+        ${isMobile() ? '<p class="note">スキルは、画面下のスキルボタンをタップして使います。</p>' : `<div class="field"><span>スキルキー</span>
           <div class="row">${[0, 1].map(i => `<button class="btn" data-key="${i}"></button>`).join('')}</div>
-          <small id="key-msg">ボタンを押してから、Shift または Alt と組み合わせたキーを押します</small></div>
+          <small id="key-msg">ボタンを押してから、Shift または Alt と組み合わせたキーを押します</small></div>`}
       </div>
       <div class="row"><button class="btn primary" id="back">メニューへ戻る</button></div>`;
     const $ = q => el.querySelector(q);

@@ -35,7 +35,7 @@ export function createBattle({ chars, rng, duration = R.DURATION }) {
   };
 
   return {
-    hit(s) { // 正しい1打鍵
+    hit(s, mult = 1) { // 正しい1打鍵(mult: スマホ入力のダメージ倍率など)
       if (over) return;
       const p = P[s], f = P[otherSide(s)];
       p.hits++; p.combo++;
@@ -46,7 +46,7 @@ export function createBattle({ chars, rng, duration = R.DURATION }) {
       const crit = rng() < critRate;
       const wd = pas(f, 'ward');
       const cut = clampN(f.c.def + sum(f, 'shield') + (wd ? wd.v : 0), 0, R.DEF_CAP);
-      const dmg = p.c.atk * (1 + bonus) * (crit ? p.c.critMul : 1) * prod(p, 'dmg') * prod(p, 'atkDown') * passiveMul * (1 - cut);
+      const dmg = p.c.atk * (1 + bonus) * (crit ? p.c.critMul : 1) * prod(p, 'dmg') * prod(p, 'atkDown') * passiveMul * (1 - cut) * mult;
       p.gauge = Math.min(R.GAUGE_MAX, p.gauge + R.GAUGE_PER_HIT * (1 + Math.min(p.combo, R.COMBO_GAUGE_FULL) / R.COMBO_GAUGE_FULL) * prod(p, 'gaugeMul') * (fg ? fg.v : 1));
       hurt(otherSide(s), dmg);
       if (ls) p.hp = Math.min(p.max, p.hp + dmg * ls.v);

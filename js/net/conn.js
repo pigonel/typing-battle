@@ -1,5 +1,6 @@
 // サーバーとの通信(WebSocket)。ファイルを直接開いている場合(サーバーなし)は接続しない
 import { store, applyUser, applyProfile } from '../core/state.js';
+import { isMobile } from '../core/device.js';
 
 const LISTENERS = new Map();
 export const LAST = {}; // 種類ごとの最新メッセージ(画面の切り替え中に届いたものを拾うため)
@@ -21,7 +22,7 @@ export const conn = {
     s.onopen = () => {
       retry = 0;
       let token = null; try { token = localStorage.getItem('tb.token'); } catch { /* 無視 */ }
-      s.send(JSON.stringify({ t: 'hello', token, guest: store.get().session.ign }));
+      s.send(JSON.stringify({ t: 'hello', token, guest: store.get().session.ign, device: isMobile() ? 'mobile' : 'pc' }));
     };
     s.onmessage = ev => {
       let m; try { m = JSON.parse(ev.data); } catch { return; }

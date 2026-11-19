@@ -1,6 +1,6 @@
 {
   "name": "typing-battle",
-  "version": "0.6.0",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "description": "タイピングバトル(オンライン対戦つき)",
@@ -8,6 +8,6 @@
   "scripts": {
     "start": "node server/server.js",
     "build": "python3 tools/bundle.py",
-    "test": "node tools/test.mjs && node tools/test_rank.mjs && node tools/test_online.mjs"
+    "test": "node tools/test.mjs && node tools/test_kana.mjs && node tools/test_rank.mjs && node tools/test_online.mjs"
   }
 }

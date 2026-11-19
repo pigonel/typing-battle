@@ -3,8 +3,8 @@
 import re, pathlib
 root = pathlib.Path(__file__).resolve().parent.parent
 SCREENS = ['menu', 'settings', 'training', 'battle', 'matching', 'draft', 'vs', 'result', 'codex', 'titles']
-ORDER = ['js/core/dom.js', 'js/core/store.js', 'js/data/titles.js', 'js/core/state.js', 'js/core/router.js', 'js/core/auth.js', 'js/net/conn.js', 'js/core/audio.js', 'js/core/account_ui.js',
-         'js/engine/rules.js', 'js/engine/rng.js', 'js/engine/romaji.js', 'js/engine/battle.js', 'js/engine/bot.js', 'js/engine/feed.js',
+ORDER = ['js/core/dom.js', 'js/core/store.js', 'js/data/titles.js', 'js/core/state.js', 'js/core/router.js', 'js/core/device.js', 'js/core/auth.js', 'js/net/conn.js', 'js/core/audio.js', 'js/core/account_ui.js',
+         'js/engine/rules.js', 'js/engine/rng.js', 'js/engine/romaji.js', 'js/engine/kana.js', 'js/engine/wordinput.js', 'js/engine/battle.js', 'js/engine/bot.js', 'js/engine/feed.js',
          'js/data/menu.js', 'js/data/characters.js', 'js/data/words.js', 'js/data/presets.js', 'js/data/art.js', 'js/data/rank_icons.js',
          'js/screens/battle_fx.js'] + [f'js/screens/{n}.js' for n in SCREENS] + ['js/main.js']
 DEFAULT_NAMES = {f'js/screens/{n}.js': f'{n}Screen' for n in SCREENS}

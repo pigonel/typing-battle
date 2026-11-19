@@ -3,7 +3,9 @@ import { charArt, ACCENT } from '../data/art.js';
 import { createFx } from './battle_fx.js';
 import { createBattle } from '../engine/battle.js';
 import { createBot } from '../engine/bot.js';
-import { createTyper } from '../engine/romaji.js';
+import { createWordInput } from '../engine/wordinput.js';
+import { RULES } from '../engine/rules.js';
+import { isMobile } from '../core/device.js';
 import { mulberry32 } from '../engine/rng.js';
 import { makeQueue } from '../engine/feed.js';
 import { conn } from '../net/conn.js';
@@ -22,17 +24,19 @@ export default {
     const fromTraining = cfg.kind === 'training', online = cfg.kind === 'online';
     const me = charById(cfg.me), foe = charById(cfg.foe);
     const skillKeys = store.get().settings.skillKeys;
-    const skillBox = (c, mine) => c.skills.map((s, i) => `<div class="skill" data-sk="${i}"><kbd>${mine ? keyLabel(skillKeys[i]) : ''}</kbd><b>${s.name}</b><small>${s.desc}</small></div>`).join('');
+    let mobile = isMobile(); // スマホ入力: 1文字のダメージが1.5倍(ローマ字1打鍵・かな1文字)
+    const skillBox = (c, mine) => c.skills.map((s, i) => `<div class="skill" data-sk="${i}"><kbd>${mine ? (mobile ? 'タップ' : keyLabel(skillKeys[i])) : ''}</kbd><b>${s.name}</b><small>${s.desc}</small></div>`).join('');
 
     el.innerHTML = `
       <div class="battle">
+        ${mobile ? '<button class="mbtn" data-a="mmenu" type="button" aria-label="メニュー">☰</button>' : ''}
         <div class="bt-top">
           <div class="bt-side"><div class="bt-name">${me.name}<small>${me.role}</small>${cfg.meIgn ? `<em>${esc(cfg.meIgn)}</em>` : ''}<span class="pv" title="${esc(me.passive.desc)}">${me.passive.name}</span></div><div class="hpbar"><i class="hp-ghost"></i><i class="hp-fill"></i></div><div class="hp-num"></div></div>
           <div class="bt-timer"><span id="clock">60</span><small>秒</small><div class="pips" id="pips"></div></div>
           <div class="bt-side right"><div class="bt-name">${foe.name}<small>${foe.role}</small>${cfg.foeIgn ? `<em>${esc(cfg.foeIgn)}</em>` : ''}<span class="pv" title="${esc(foe.passive.desc)}">${foe.passive.name}</span></div><div class="hpbar"><i class="hp-ghost"></i><i class="hp-fill"></i></div><div class="hp-num"></div><div class="mini-gauge"><i id="g2"></i></div></div>
         </div>
         <div class="stage"><div class="fighter l"><div class="aura"></div><div class="idle">${charArt(me)}</div></div><div class="fighter r"><div class="aura"></div><div class="idle">${charArt(foe)}</div></div><div class="fxl"></div><div class="flash"></div><div class="banner"></div></div>
-        <div class="typing"><div class="t-disp"></div><div class="t-kana"></div><div class="t-rom"></div></div>
+        <div class="typing"><div class="t-disp"></div><div class="t-kana"></div><div class="t-rom"></div>${mobile ? `<input id="mi" class="mi" type="text" inputmode="text" lang="ja" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" aria-label="ここに入力"><div class="t-hint">ここをタップして入力(1文字のダメージ${RULES.MOBILE_MULT}倍)</div><button class="imebtn" data-a="ime" type="button"></button>` : ''}</div>
         <div class="hud-b">
           <div class="combo"><b id="combo">0</b>コンボ</div>
           <div><div class="gauge"><div class="g-fill" id="g1"></div>${me.skills.map(sk => `<i class="tick" style="left:${(sk.cost / 300) * 100}%"></i>`).join('')}</div></div>
@@ -47,7 +51,9 @@ export default {
     stage.style.setProperty('--me', ACCENT[me.id]); stage.style.setProperty('--foe', ACCENT[foe.id]);
     const fx = createFx({ arena: root, stage, fighters, chars: { p1: me, p2: foe }, banner, chips: $$('.pv'), on: store.get().settings.fx });
 
-    let battle, bot, typer, word, queue, qi, phase = 'count', last = 0, raf = 0, timers = [], stats, score = [0, 0], round = 1, tot, forfeit = false, summary = null, menuOpen = false, matchOver = false, lastHurt = 0;
+    let battle, bot, wi, word, queue, qi, phase = 'count', last = 0, raf = 0, timers = [], stats, score = [0, 0], round = 1, tot, forfeit = false, summary = null, menuOpen = false, matchOver = false, lastHurt = 0;
+    let imeMode = 'kana', prevIn = '', mi = null; // 入力方式: kana(日本語キーボード) / roman(英字キーボード)
+    try { if (localStorage.getItem('tb.ime') === 'roman') imeMode = 'roman'; } catch { /* 無視 */ }
     const later = (fn, ms) => timers.push(setTimeout(fn, ms));
     const remote = {
       snap: null, evq: [],
@@ -62,11 +68,11 @@ export default {
       surrender() { conn.send({ t: 'surrender' }); },
     };
 
-    const nextWord = () => { word = queue[qi++ % queue.length]; typer = createTyper(word.r, !!word.lit); paintWord(); };
+    const nextWord = () => { word = queue[qi++ % queue.length]; wi = createWordInput(word); if (mi) { mi.value = ''; prevIn = ''; } paintWord(); };
     const paintWord = () => {
-      const v = typer.view();
+      const v = wi.view();
       $('.t-disp').textContent = word.t !== word.r ? word.t : '';
-      $('.t-kana').innerHTML = `<span class="done">${esc(v.kanaDone)}</span>${esc(v.kanaRest)}`;
+      $('.t-kana').innerHTML = `<span class="done">${esc(v.kanaDone)}</span>${v.pending ? `<span class="pend">${esc(v.pending)}</span>` : ''}${esc(v.kanaRest)}`;
       $('.t-rom').innerHTML = `<span class="done">${esc(v.typed)}</span><span class="rest"><u>${esc(v.rest[0] ?? '')}</u>${esc(v.rest.slice(1))}</span>`;
     };
 
@@ -230,12 +236,64 @@ export default {
       if (sk >= 0) { e.preventDefault(); battle.skill('p1', sk); return; }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const ch = keyToChar(e.code); if (!ch) return;
+      if (mobile && /^Key[A-Z]$/.test(e.code) && !e.isComposing && e.keyCode !== 229) { // 外付けキーボードで打っている → スマホ扱いをやめる
+        mobile = false; mi?.remove(); mi = null; if (online) conn.send({ t: 'device', d: 'pc' });
+        root.classList.add('hwkb'); $$('.skill kbd').forEach((k, i) => { k.textContent = keyLabel(skillKeys[i]); });
+      }
       e.preventDefault();
-      const r = typer.press(ch);
-      if (online) conn.send({ t: 'key', c: ch });
-      if (r === 'miss') { if (!online) battle.miss('p1'); sfx('miss'); }
-      else { if (!online) battle.hit('p1'); sfx('key'); if (r === 'done') nextWord(); else paintWord(); }
+      feed('r', ch);
     };
+
+    // 1文字の入力(kind: 'r'=ローマ字 / 'k'=かな)。サーバー対戦では、同じ内容をサーバーへ送って判定してもらう
+    const feed = (kind, ch, replace = false) => {
+      if (!wi || phase !== 'fight' || menuOpen) return;
+      if (online) conn.send(kind === 'r' ? { t: 'key', c: ch } : { t: 'kc', c: ch, r: replace ? 1 : 0 });
+      for (const r of wi.press(kind, ch, replace)) {
+        if (r === 'miss') { if (!online) battle.miss('p1'); sfx('miss'); }
+        else if (r === 'ok' || r === 'done') { if (!online) battle.hit('p1', mobile ? RULES.MOBILE_MULT : 1); sfx('key'); if (r === 'done') { nextWord(); return; } }
+      }
+      paintWord();
+    };
+
+    // スマホ: 入力欄(画面下のタップ領域)の内容の変化から、打った文字を読み取る
+    const toHira = t => t.replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+    const onInput = () => {
+      const cur = toHira(mi.value.replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))).replace(/\s+/g, '');
+      if (phase !== 'fight' || menuOpen) { mi.value = ''; prevIn = ''; return; }
+      let k = 0; while (k < prevIn.length && k < cur.length && prevIn[k] === cur[k]) k++;
+      const removed = prevIn.slice(k), added = cur.slice(k);
+      prevIn = cur;
+      if (!added) return; // 削除など
+      const isK = c => /[ぁ-ゖー]/.test(c);
+      if (imeMode === 'roman') { if (!removed) for (const c of added) if (/[a-z-]/i.test(c)) feed('r', c.toLowerCase()); return; }
+      // かな: 濁点などで直前の1文字が置き換わった場合は replace。ローマ字かな変換(k→か)で英字が仮に出たあとは、かなになった時点で1文字と数える
+      const replace = removed.length > 0 && isK(removed.slice(-1)) && added.length === 1 && isK(added);
+      for (const c of added) if (isK(c)) feed('k', c, replace);
+    };
+    const setIme = mode => {
+      const changed = imeMode !== mode;
+      imeMode = mode; try { localStorage.setItem('tb.ime', mode); } catch { /* 無視 */ }
+      if (changed && wi && word) { wi = createWordInput(word); if (online) conn.send({ t: 'reset' }); paintWord(); } // 入力方式を変えたら、この単語を打ち直す
+      const btn = $('.imebtn'); if (btn) btn.textContent = mode === 'kana' ? '入力: かな(日本語キーボード)' : '入力: ローマ字(英字キーボード)';
+      if (mi) { mi.value = ''; prevIn = ''; mi.setAttribute('inputmode', mode === 'kana' ? 'text' : 'email'); mi.setAttribute('lang', mode === 'kana' ? 'ja' : 'en'); if (document.activeElement === mi) { mi.blur(); mi.focus(); } }
+    };
+    mi = $('#mi');
+    if (mi) {
+      mi.addEventListener('input', onInput);
+      mi.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+      mi.addEventListener('focus', () => root.classList.add('kb')); mi.addEventListener('blur', () => root.classList.remove('kb'));
+      el.addEventListener('pointerdown', e => { if (e.target.closest('.skill, .mbtn, .imebtn')) e.preventDefault(); }); // キーボードを閉じない
+      setIme(imeMode);
+    }
+    el.addEventListener('click', e => {
+      const a = e.target.closest('[data-a]')?.dataset.a;
+      if (a === 'ime') setIme(imeMode === 'kana' ? 'roman' : 'kana');
+      else if (a === 'mmenu') { if (online) { if (!matchOver && phase !== 'over') onlineMenu(); } else if (phase === 'fight') pauseMenu(); else if (phase === 'pause') resume(); }
+    });
+    el.addEventListener('pointerdown', e => { // スキルはタップで発動(スマホ)
+      const sk = e.target.closest('.skill'); if (!sk || phase !== 'fight' || menuOpen) return;
+      battle.skill('p1', +sk.dataset.sk);
+    });
 
     const frame = now => {
       raf = requestAnimationFrame(frame);

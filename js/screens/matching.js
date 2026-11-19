@@ -1,5 +1,6 @@
 import { conn } from '../net/conn.js';
 import { sfx } from '../core/audio.js';
+import { isMobile } from '../core/device.js';
 import { esc } from '../core/dom.js';
 import { equippedTitle } from '../core/state.js';
 import { titleName } from '../data/titles.js';
@@ -33,7 +34,7 @@ export default {
       conn.on('error', m => { clearInterval(tick); $('.mt-msg').textContent = m.msg ?? 'エラーが発生しました'; $('.mt-radar').hidden = true; $('#cancel').textContent = 'メニューへ戻る'; }),
       conn.on('_close', () => { if (!done) { clearInterval(tick); $('.mt-msg').textContent = 'サーバーとの接続が切れました'; $('#cancel').textContent = 'メニューへ戻る'; } }),
     ];
-    conn.send({ t: 'queue', mode });
+    conn.send({ t: 'queue', mode, device: isMobile() ? 'mobile' : 'pc' });
     const cancel = () => { if (!done) { conn.send({ t: 'cancel' }); go('menu'); } };
     el.addEventListener('click', e => { if (e.target.id === 'cancel') cancel(); });
     const onKey = e => { if (e.key === 'Escape') cancel(); };

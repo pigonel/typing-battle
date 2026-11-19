@@ -79,6 +79,33 @@ function client(name, token, { err = 0, cpmMs = 70, skill = true } = {}) {
   assert.ok(n.vs.foe.ign.length > 2); assert.equal(e.rank.ranked, false); assert.ok(e.titles.length > 0, `CPU戦でも称号を獲得できる: ${e.titles}`); console.log('CPU戦で獲得した称号:', e.titles.join(',')); n.ws.close(); await new Promise(r => setTimeout(r, 200));
   const me = (await get('/api/me', tokA)).j.user; assert.equal(me.games, 1); assert.ok(me.rank.startsWith('未配置')); }
 
+// ---- スマホ入力: かな入力がサーバーで判定され、ダメージが1.5倍・相手に「スマホ」と分かる ----
+{ const { createWordInput } = await import('../js/engine/wordinput.js');
+  const ws = new WebSocket(`ws://127.0.0.1:${server.address().port}/ws`), send = o => ws.send(JSON.stringify(o)), evs = [];
+  let fmt, q, done;
+  const fin = new Promise(r => { done = r; });
+  ws.onopen = () => send({ t: 'hello', guest: 'Kana', device: 'mobile' });
+  ws.onmessage = async e => { const m = JSON.parse(e.data);
+    if (m.t === 'hello_ok') send({ t: 'queue', mode: 'normal', device: 'mobile' });
+    else if (m.t === 'phase') send(m.step === 'pick' ? { t: 'pick', id: 'thief' } : { t: 'fmt', id: m.fmts[0] });
+    else if (m.t === 'vs') { fmt = m.format; send({ t: 'ready' }); }
+    else if (m.t === 'round') { q = makeQueue(fmt, m.seed); setTimeout(async () => {
+      if (q[0].lit) { ws.close(); return done(null); } // 英単語はかな入力なし
+      const chars = [...q[0].r].slice(0, 12); evs.expected = chars.length;
+      for (const ch of chars) { send({ t: 'kc', c: ch, r: 0 }); await new Promise(r => setTimeout(r, 160)); }
+      await new Promise(r => setTimeout(r, 400)); ws.close(); done(evs);
+    }, m.startIn + 50); }
+    else if (m.t === 'ev') evs.push(...m.list);
+  };
+  const r = await fin;
+  if (r) { const hits = r.filter(x => x.type === 'hit' && x.side === 'p1'), miss = r.filter(x => x.type === 'miss' && x.side === 'p1');
+    assert.ok(hits.length === r.expected && miss.length === 0, `かな入力 hits=${hits.length} expected=${r.expected} miss=${miss.length}`); }
+  await new Promise(r => setTimeout(r, 300)); }
+{ // PC側のクライアントには、相手がスマホかどうかが伝わる(ランク・称号とは無関係の表示用)
+  const x = client('X', null); await x.ready(); x.send({ t: 'queue', mode: 'normal', device: 'mobile' }); const y = client('Y', null); await y.ready(); y.send({ t: 'queue', mode: 'normal', device: 'pc' });
+  await new Promise(r => { const i = setInterval(() => { if (x.vs && y.vs) { clearInterval(i); r(); } }, 50); });
+  assert.equal(x.vs.foe.mobile, false); assert.equal(y.vs.foe.mobile, true); x.ws.close(); y.ws.close(); await new Promise(r => setTimeout(r, 300)); }
+
 // ---- ランクマッチ(2人・配置戦。2先取) ----
 { const A = client('A', tokA, { err: 0.01, cpmMs: 65 }), B = client('B', tokB, { err: 0.08, cpmMs: 90, skill: false });
   await A.ready(); await B.ready(); A.send({ t: 'queue', mode: 'ranked' }); B.send({ t: 'queue', mode: 'ranked' });

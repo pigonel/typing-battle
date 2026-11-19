@@ -121,7 +121,7 @@ function applyResults({ match, reason, leaver, stats }) {
 }
 
 // ---------- マッチング ----------
-const toPlayer = e => ({ ws: e.c.ws, user: e.c.user, ign: e.c.ign, title: e.c.user?.settings?.title ? TITLES.find(t => t.id === e.c.user.settings.title)?.name ?? null : null,
+const toPlayer = e => ({ mobile: e.c.device === 'mobile', ws: e.c.ws, user: e.c.user, ign: e.c.ign, title: e.c.user?.settings?.title ? TITLES.find(t => t.id === e.c.user.settings.title)?.name ?? null : null,
   rankText: e.c.user ? (e.c.user.rank.placed ? rankName(e.c.user.rank, Auth.gmSet().has(e.c.user.id)) : '未配置') : 'ゲスト', c: e.c });
 function startMatch(match, players) { players.forEach(p => { p.c.match = match; p.c.player = p; }); }
 const mm = new Matchmaker({
@@ -153,7 +153,7 @@ server.on('upgrade', (req, socket, head) => {
       if (m.t === 'hello') {
         c.user = Auth.userByToken(m.token);
         c.ign = c.user ? c.user.ign : String(m.guest ?? 'Guest').replace(/[^A-Za-z0-9_.-]/g, '').slice(0, 16) || 'Guest';
-        c.authed = true;
+        c.authed = true; c.device = m.device === 'mobile' ? 'mobile' : 'pc';
         return send({ t: 'hello_ok', user: c.user ? Auth.profileOf(c.user) : null, guest: !c.user, tokenValid: !m.token || !!c.user });
       }
       if (!c.authed) return;
@@ -161,6 +161,7 @@ server.on('upgrade', (req, socket, head) => {
       if (m.t === 'queue') {
         if (c.match && c.match.finished) c.match = null;
         if (m.mode !== 'ranked' && m.mode !== 'normal') return;
+        if (m.device) c.device = m.device === 'mobile' ? 'mobile' : 'pc';
         if (m.mode === 'ranked' && !c.user) return send({ t: 'error', code: 'login', msg: 'ランクマッチはログインが必要です' });
         if (c.user && [...conns].some(o => o !== c && o.user === c.user && (o.match || mm.has(o)))) return send({ t: 'error', code: 'busy', msg: 'このアカウントは別の場所で対戦中・待機中です' });
         mm.add({ c, mode: m.mode, rank: c.user ? c.user.rank : newRank() });
